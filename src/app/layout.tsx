@@ -1,5 +1,4 @@
 import type { Metadata, Viewport } from "next";
-import { Geist, Geist_Mono, Noto_Sans_KR } from "next/font/google";
 import "./globals.css";
 import { LanguageProvider } from "@/contexts/LanguageContext";
 import { IngredientProvider } from "@/contexts/IngredientContext";
@@ -7,22 +6,6 @@ import { RecipeProvider } from "@/contexts/RecipeContext";
 import { AdminProvider } from "@/contexts/AdminContext";
 import { AnalyticsProvider } from "@/contexts/AnalyticsContext";
 import { PricingProvider } from "@/contexts/PricingContext";
-
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
-
-const notoSansKr = Noto_Sans_KR({
-  variable: "--font-noto-sans-kr",
-  subsets: ["latin"],
-  weight: ["100", "200", "300", "400", "500"],
-});
 
 export const metadata: Metadata = {
   title: "SLINSHOT : FILL YOUR DAY",
@@ -44,7 +27,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} ${notoSansKr.variable} font-sans antialiased bg-stone-100 flex justify-center`}
+        className="font-sans antialiased bg-stone-100 flex justify-center"
       >
         <LanguageProvider>
           <IngredientProvider>
