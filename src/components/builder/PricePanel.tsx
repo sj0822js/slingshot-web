@@ -14,8 +14,6 @@ export default function PricePanel({ recipe }: PricePanelProps) {
   const [eatIn, setEatIn] = useState(false);
   const [expanded, setExpanded] = useState(true);
 
-  // getIngredientPrice returns price per 100 units (100ml or 100g)
-  // so actual cost = (price / 100) * amount
   const costOf = (id: string, amount: number) =>
     Math.round((getIngredientPrice(id) / 100) * amount);
 
@@ -25,7 +23,7 @@ export default function PricePanel({ recipe }: PricePanelProps) {
   const dineInFee = eatIn ? settings.takeoutFee : 0;
 
   const baseIngredientCost = recipe.base
-    ? costOf(recipe.base.id, recipe.baseVolumeMl)
+    ? getIngredientPrice(recipe.base.id)
     : 0;
 
   const liquidCosts = recipe.liquids.map(({ liquid, volumeMl }) => ({
@@ -64,7 +62,7 @@ export default function PricePanel({ recipe }: PricePanelProps) {
     { label: "기본 제조비", amount: won(baseFee) },
     ...(cupSizeSurcharge > 0 ? [{ label: `컵 추가금 (${recipe.cupSizeMl}ml)`, amount: `+${won(cupSizeSurcharge)}` }] : []),
     ...(dineInFee > 0 ? [{ label: "매장 이용요금", amount: `+${won(dineInFee)}` }] : []),
-    ...(recipe.base && baseIngredientCost > 0 ? [{ label: `${recipe.base.name} (${recipe.baseVolumeMl}ml)`, amount: `+${won(baseIngredientCost)}` }] : []),
+    ...(recipe.base && baseIngredientCost > 0 ? [{ label: `${recipe.base.name} (1 shot)`, amount: `+${won(baseIngredientCost)}` }] : []),
     ...liquidCosts.filter((l) => l.cost > 0).map((l) => ({ label: `${l.name} (${l.amount})`, amount: `+${won(l.cost)}` })),
     ...subCosts.filter((s) => s.cost > 0).map((s) => ({ label: `${s.name} (${s.amount})`, amount: `+${won(s.cost)}` })),
     ...garnishCosts.filter((g) => g.cost > 0).map((g) => ({ label: `${g.name} (${g.amount})`, amount: `+${won(g.cost)}` })),

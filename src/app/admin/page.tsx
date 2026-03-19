@@ -553,7 +553,7 @@ export default function SuperAdminPage() {
               <div className="p-2 bg-[#FFAA00]/10 rounded-lg text-[#FFAA00]"><Receipt className="w-5 h-5" /></div>
               <div>
                 <h2 className="text-lg font-bold text-[#237227]">가격 설정</h2>
-                <p className="text-xs text-[#519A66]/60">각 재료별 단가(Won/ml 또는 Won/g)와 기본 요금을 설정합니다.</p>
+                <p className="text-xs text-[#519A66]/60">베이스는 shot 1회 기준, 액체는 100ml 기준, 부재료/가니쉬는 100g 기준으로 설정합니다.</p>
               </div>
             </div>
 
@@ -585,14 +585,16 @@ export default function SuperAdminPage() {
             </div>
 
             {/* Per-ingredient prices */}
-            <p className="text-xs font-black text-[#519A66]/60 uppercase tracking-widest mb-3">재료별 단가 (원/100ml 또는 원/100g)</p>
+            <p className="text-xs font-black text-[#519A66]/60 uppercase tracking-widest mb-3">재료별 단가</p>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-2 max-h-72 overflow-y-auto pr-1">
               {ingredients.filter((i) => i.category !== "temperature").map((ing) => (
                 <div key={ing.id} className="flex items-center gap-2 bg-[#f5f9f5] rounded-xl px-3 py-2">
                   <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: ing.colorHex ?? '#519A66' }} />
                   <span className="flex-1 text-xs font-bold text-[#237227] truncate">{ing.name}</span>
                   {ing.isAdminCreated && <span className="text-[9px] font-black text-[#FFAA00] bg-[#FFAA00]/10 px-1.5 py-0.5 rounded-full shrink-0">공식</span>}
-                  <span className="text-[10px] text-[#519A66]/50 shrink-0">{ing.category === 'liquid' || ing.category === 'base' ? '원/100ml' : '원/100g'}</span>
+                  <span className="text-[10px] text-[#519A66]/50 shrink-0">
+                    {ing.category === 'base' ? '원/shot' : ing.category === 'liquid' ? '원/100ml' : '원/100g'}
+                  </span>
                   <input
                     type="number"
                     min={0}
