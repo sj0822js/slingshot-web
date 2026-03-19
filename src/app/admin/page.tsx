@@ -1,7 +1,6 @@
 "use client";
 
 import Header from "@/components/layout/Header";
-import { useLanguage } from "@/contexts/LanguageContext";
 import { useAdmin } from "@/contexts/AdminContext";
 import { useIngredients } from "@/contexts/IngredientContext";
 import { useAnalytics } from "@/contexts/AnalyticsContext";
@@ -16,10 +15,9 @@ import { motion } from "framer-motion";
 import AdminGuard from "@/components/auth/AdminGuard";
 import Link from "next/link";
 import { useState, useEffect } from "react";
-import { usePricing } from "@/contexts/PricingContext";
+import { IngredientPrice, usePricing } from "@/contexts/PricingContext";
 
 export default function SuperAdminPage() {
-  const { t } = useLanguage();
   const { appName, setAppName, logoUrl, setLogoUrl, trendDrinks, setTrendDrinks } = useAdmin();
   const { ingredients, updateIngredient, addIngredient } = useIngredients();
   const { getTodayCount, getTopPages } = useAnalytics();
@@ -29,6 +27,8 @@ export default function SuperAdminPage() {
   const [localTitle, setLocalTitle] = useState(appName);
   const [savedTick, setSavedTick] = useState(false);
   const [trendTick, setTrendTick] = useState(false);
+  const [baseSavedTick, setBaseSavedTick] = useState(false);
+  const [priceSavedTick, setPriceSavedTick] = useState(false);
 
   // Analytics
   const [todayCount, setTodayCount] = useState(0);
@@ -40,6 +40,41 @@ export default function SuperAdminPage() {
 
   // Computed state
   const bases = ingredients.filter((i) => i.category === "base") as DrinkBase[];
+  const [baseDrafts, setBaseDrafts] = useState<Record<string, DrinkBase>>({});
+  const [pricingDraft, setPricingDraft] = useState(pricing);
+  const [ingredientPriceDrafts, setIngredientPriceDrafts] = useState<Record<string, number>>({});
+
+  useEffect(() => {
+    setLocalTitle(appName);
+  }, [appName]);
+
+  useEffect(() => {
+    setBaseDrafts(
+      Object.fromEntries(
+        bases.map((base) => [
+          base.id,
+          {
+            ...base,
+            dosingGrams: base.dosingGrams ?? 0,
+            extractionGrams: base.extractionGrams ?? 0,
+            extractionSeconds: base.extractionSeconds ?? 0,
+            extractionTemp: base.extractionTemp ?? 0,
+          },
+        ])
+      )
+    );
+  }, [bases]);
+
+  useEffect(() => {
+    setPricingDraft(pricing);
+    setIngredientPriceDrafts(
+      Object.fromEntries(
+        ingredients
+          .filter((ingredient) => ingredient.category !== "temperature")
+          .map((ingredient) => [ingredient.id, getIngredientPrice(ingredient.id)])
+      )
+    );
+  }, [pricing, ingredients, getIngredientPrice]);
 
   // Espresso editor states
   const [editingBaseId, setEditingBaseId] = useState<string | null>(null);
@@ -154,6 +189,50 @@ export default function SuperAdminPage() {
     setNewBaseOrigin("");
     setNewBaseColor("#6B4226");
     setIsAddingBase(false);
+  };
+
+  const updateBaseDraft = (baseId: string, updates: Partial<DrinkBase>) => {
+    setBaseDrafts((prev) => ({
+      ...prev,
+      [baseId]: {
+        ...(prev[baseId] ?? bases.find((base) => base.id === baseId)!),
+        ...updates,
+      },
+    }));
+  };
+
+  const handleSaveBaseSettings = () => {
+    Object.values(baseDrafts).forEach((draft) => {
+      updateIngredient(draft.id, {
+        name: draft.name,
+        origin: draft.origin,
+        dosingGrams: draft.dosingGrams,
+        extractionGrams: draft.extractionGrams,
+        extractionSeconds: draft.extractionSeconds,
+        extractionTemp: draft.extractionTemp,
+      });
+    });
+
+    setBaseSavedTick(true);
+    setTimeout(() => setBaseSavedTick(false), 2000);
+  };
+
+  const handleSavePricingSettings = () => {
+    updatePricing({
+      baseFee: pricingDraft.baseFee,
+      takeoutFee: pricingDraft.takeoutFee,
+      cupSizeFees: pricingDraft.cupSizeFees,
+      ingredientPrices: Object.entries(ingredientPriceDrafts)
+        .filter(([, price]) => price > 0)
+        .map(([ingredientId, price]) => ({ ingredientId, pricePerUnit: price })) as IngredientPrice[],
+    });
+
+    Object.entries(ingredientPriceDrafts).forEach(([ingredientId, price]) => {
+      setIngredientPrice(ingredientId, price);
+    });
+
+    setPriceSavedTick(true);
+    setTimeout(() => setPriceSavedTick(false), 2000);
   };
 
   const handleSaveGlobal = () => {
@@ -407,8 +486,8 @@ export default function SuperAdminPage() {
                         <div className="flex-1 flex gap-2">
                           <input
                             type="text"
-                            defaultValue={base.name}
-                            onBlur={(e) => { updateIngredient(base.id, { name: e.target.value }); }}
+                            value={baseDrafts[base.id]?.name ?? base.name}
+                            onChange={(e) => updateBaseDraft(base.id, { name: e.target.value })}
                             className="flex-1 border border-[#519A66]/30 rounded-md px-2 py-1 text-sm font-bold focus:outline-none bg-white"
                             placeholder="베이스명"
                           />
@@ -429,8 +508,8 @@ export default function SuperAdminPage() {
                       <label className="text-[10px] uppercase font-bold text-[#519A66]/60 tracking-wider mb-1 block">원산지</label>
                       <input
                         type="text"
-                        value={base.origin || ""}
-                        onChange={(e) => updateIngredient(base.id, { origin: e.target.value })}
+                        value={baseDrafts[base.id]?.origin || ""}
+                        onChange={(e) => updateBaseDraft(base.id, { origin: e.target.value })}
                         placeholder="예: 에티오피아 예가체프"
                         className="w-full border border-[#519A66]/20 rounded-md px-2 py-1.5 text-sm bg-white focus:outline-none focus:border-[#519A66]"
                       />
@@ -439,24 +518,30 @@ export default function SuperAdminPage() {
                     <div className="grid grid-cols-2 gap-2 mt-2">
                       <div className="flex flex-col">
                         <label className="text-[10px] uppercase font-bold text-[#519A66]/60 tracking-wider flex items-center gap-1 mb-1"><Droplet className="w-3 h-3"/> 도징(g)</label>
-                        <input type="number" value={base.dosingGrams || ''} onChange={(e) => updateIngredient(base.id, { dosingGrams: Number(e.target.value) })} className="w-full border border-[#519A66]/20 rounded-md px-2 py-1 text-sm bg-white focus:outline-none" />
+                        <input type="number" value={baseDrafts[base.id]?.dosingGrams || ''} onChange={(e) => updateBaseDraft(base.id, { dosingGrams: Number(e.target.value) })} className="w-full border border-[#519A66]/20 rounded-md px-2 py-1 text-sm bg-white focus:outline-none" />
                       </div>
                       <div className="flex flex-col">
                         <label className="text-[10px] uppercase font-bold text-[#519A66]/60 tracking-wider flex items-center gap-1 mb-1"><Droplet className="w-3 h-3 text-orange-400"/> 추출액(g)</label>
-                        <input type="number" value={base.extractionGrams || ''} onChange={(e) => updateIngredient(base.id, { extractionGrams: Number(e.target.value) })} className="w-full border border-[#519A66]/20 rounded-md px-2 py-1 text-sm bg-white focus:outline-none" />
+                        <input type="number" value={baseDrafts[base.id]?.extractionGrams || ''} onChange={(e) => updateBaseDraft(base.id, { extractionGrams: Number(e.target.value) })} className="w-full border border-[#519A66]/20 rounded-md px-2 py-1 text-sm bg-white focus:outline-none" />
                       </div>
                       <div className="flex flex-col">
                         <label className="text-[10px] uppercase font-bold text-[#519A66]/60 tracking-wider flex items-center gap-1 mb-1"><Timer className="w-3 h-3"/> 초(s)</label>
-                        <input type="number" value={base.extractionSeconds || ''} onChange={(e) => updateIngredient(base.id, { extractionSeconds: Number(e.target.value) })} className="w-full border border-[#519A66]/20 rounded-md px-2 py-1 text-sm bg-white focus:outline-none" />
+                        <input type="number" value={baseDrafts[base.id]?.extractionSeconds || ''} onChange={(e) => updateBaseDraft(base.id, { extractionSeconds: Number(e.target.value) })} className="w-full border border-[#519A66]/20 rounded-md px-2 py-1 text-sm bg-white focus:outline-none" />
                       </div>
                       <div className="flex flex-col">
                         <label className="text-[10px] uppercase font-bold text-[#519A66]/60 tracking-wider flex items-center gap-1 mb-1"><ThermometerSun className="w-3 h-3 text-red-400"/> 수온(°C)</label>
-                        <input type="number" value={base.extractionTemp || ''} onChange={(e) => updateIngredient(base.id, { extractionTemp: Number(e.target.value) })} className="w-full border border-[#519A66]/20 rounded-md px-2 py-1 text-sm bg-white focus:outline-none" />
+                        <input type="number" value={baseDrafts[base.id]?.extractionTemp || ''} onChange={(e) => updateBaseDraft(base.id, { extractionTemp: Number(e.target.value) })} className="w-full border border-[#519A66]/20 rounded-md px-2 py-1 text-sm bg-white focus:outline-none" />
                       </div>
                     </div>
                   </div>
                 ))}
               </div>
+              <button
+                onClick={handleSaveBaseSettings}
+                className={`w-full py-3 font-bold rounded-xl mt-4 transition-all flex items-center justify-center gap-2 ${baseSavedTick ? 'bg-green-500 text-white' : 'bg-[#237227] text-white hover:bg-[#1a5c1e]'}`}
+              >
+                {baseSavedTick ? <><Check className="w-5 h-5" /> 저장됨</> : "추출 세팅 저장"}
+              </button>
             </motion.section>
 
             {/* Custom Garnish + Slingshot Recipe shortcut */}
@@ -562,14 +647,14 @@ export default function SuperAdminPage() {
               <div className="bg-[#f5f9f5] rounded-xl p-3">
                 <label className="text-[10px] font-black text-[#519A66] uppercase tracking-widest block mb-1">기본 제조비</label>
                 <div className="flex items-center">
-                  <input type="number" value={pricing.baseFee} onChange={(e) => updatePricing({ baseFee: Number(e.target.value) })} className="w-full border border-[#519A66]/20 rounded-md px-2 py-1.5 text-sm bg-white focus:outline-none" />
+                  <input type="number" value={pricingDraft.baseFee} onChange={(e) => setPricingDraft((prev) => ({ ...prev, baseFee: Number(e.target.value) }))} className="w-full border border-[#519A66]/20 rounded-md px-2 py-1.5 text-sm bg-white focus:outline-none" />
                   <span className="ml-1 text-xs text-[#519A66]/60 shrink-0">원</span>
                 </div>
               </div>
               <div className="bg-[#f5f9f5] rounded-xl p-3">
                 <label className="text-[10px] font-black text-[#519A66] uppercase tracking-widest block mb-1">매장이용 추가금</label>
                 <div className="flex items-center">
-                  <input type="number" value={pricing.takeoutFee} onChange={(e) => updatePricing({ takeoutFee: Number(e.target.value) })} className="w-full border border-[#519A66]/20 rounded-md px-2 py-1.5 text-sm bg-white focus:outline-none" />
+                  <input type="number" value={pricingDraft.takeoutFee} onChange={(e) => setPricingDraft((prev) => ({ ...prev, takeoutFee: Number(e.target.value) }))} className="w-full border border-[#519A66]/20 rounded-md px-2 py-1.5 text-sm bg-white focus:outline-none" />
                   <span className="ml-1 text-xs text-[#519A66]/60 shrink-0">원</span>
                 </div>
               </div>
@@ -577,7 +662,7 @@ export default function SuperAdminPage() {
                 <div key={ml} className="bg-[#f5f9f5] rounded-xl p-3">
                   <label className="text-[10px] font-black text-[#519A66] uppercase tracking-widest block mb-1">{ml}ml 컵 추가금</label>
                   <div className="flex items-center">
-                    <input type="number" value={pricing.cupSizeFees[ml] ?? 0} onChange={(e) => updatePricing({ cupSizeFees: { ...pricing.cupSizeFees, [ml]: Number(e.target.value) } })} className="w-full border border-[#519A66]/20 rounded-md px-2 py-1.5 text-sm bg-white focus:outline-none" />
+                    <input type="number" value={pricingDraft.cupSizeFees[ml] ?? 0} onChange={(e) => setPricingDraft((prev) => ({ ...prev, cupSizeFees: { ...prev.cupSizeFees, [ml]: Number(e.target.value) } }))} className="w-full border border-[#519A66]/20 rounded-md px-2 py-1.5 text-sm bg-white focus:outline-none" />
                     <span className="ml-1 text-xs text-[#519A66]/60 shrink-0">원</span>
                   </div>
                 </div>
@@ -599,13 +684,19 @@ export default function SuperAdminPage() {
                     type="number"
                     min={0}
                     step={10}
-                    value={getIngredientPrice(ing.id)}
-                    onChange={(e) => setIngredientPrice(ing.id, Number(e.target.value))}
+                    value={ingredientPriceDrafts[ing.id] ?? 0}
+                    onChange={(e) => setIngredientPriceDrafts((prev) => ({ ...prev, [ing.id]: Number(e.target.value) }))}
                     className="w-20 border border-[#519A66]/20 rounded-md px-2 py-1 text-xs bg-white focus:outline-none text-right"
                   />
                 </div>
               ))}
             </div>
+            <button
+              onClick={handleSavePricingSettings}
+              className={`w-full py-3 font-bold rounded-xl mt-4 transition-all flex items-center justify-center gap-2 ${priceSavedTick ? 'bg-green-500 text-white' : 'bg-[#237227] text-white hover:bg-[#1a5c1e]'}`}
+            >
+              {priceSavedTick ? <><Check className="w-5 h-5" /> 저장됨</> : "가격 설정 저장"}
+            </button>
           </motion.section>
 
         </main>
