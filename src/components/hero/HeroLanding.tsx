@@ -8,7 +8,7 @@ type HeroLandingProps = {
 };
 
 const SCROLL_THRESHOLD = 1660;
-const TOUCH_THRESHOLD = 260;
+const TOUCH_THRESHOLD = 320;
 
 const COPY_LINES = [
   "계절을 품은 금목서와 목련을 가꾸고",
@@ -99,7 +99,7 @@ export default function HeroLanding({ onComplete }: HeroLandingProps) {
 
       event.preventDefault();
 
-      const next = clamp(touchBaseProgress.current + delta * 2.2, 0, SCROLL_THRESHOLD);
+      const next = clamp(touchBaseProgress.current + delta * 1.1, 0, SCROLL_THRESHOLD);
       progressRef.current = next;
       setProgress(next);
     };
@@ -110,8 +110,8 @@ export default function HeroLanding({ onComplete }: HeroLandingProps) {
       }
 
       const totalSwipe = (touchStartY.current ?? 0) - (touchLastY.current ?? touchStartY.current);
-      if (totalSwipe > 36 && progressRef.current < SCROLL_THRESHOLD) {
-        const next = clamp(progressRef.current + totalSwipe * 1.1, 0, SCROLL_THRESHOLD);
+      if (totalSwipe > 44 && progressRef.current < SCROLL_THRESHOLD) {
+        const next = clamp(progressRef.current + totalSwipe * 0.55, 0, SCROLL_THRESHOLD);
         progressRef.current = next;
         setProgress(next);
       }
@@ -178,7 +178,7 @@ export default function HeroLanding({ onComplete }: HeroLandingProps) {
       >
         <div className="pointer-events-none absolute inset-0 flex items-center">
           <div className="mx-auto w-full max-w-5xl px-6 sm:px-10">
-            <div className="relative w-full max-w-3xl pl-[30pt] text-left">
+            <div className="relative w-full max-w-3xl pl-[40pt] text-left">
               <motion.h1
                 initial={{ opacity: 0, y: 18 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -200,7 +200,7 @@ export default function HeroLanding({ onComplete }: HeroLandingProps) {
                 return (
                   <motion.p
                     key={line}
-                    className="absolute top-1/2 font-display text-[clamp(1.28rem,2.9vw,2.42rem)] font-[300] leading-[1.45] tracking-[0.04em] text-white/88 sm:text-[clamp(1.45rem,3.39vw,2.77rem)]"
+                    className="absolute top-1/2 font-display text-[clamp(1.15rem,2.61vw,2.18rem)] font-[300] leading-[1.45] tracking-[0.04em] text-white/88 sm:text-[clamp(1.31rem,3.05vw,2.49rem)]"
                     style={{
                       opacity: linePhase * (1 - exitProgress * 0.25),
                       y: 18 - linePhase * 18 - (1 - linePhase) * 10 - exitProgress * 18,
