@@ -14,10 +14,13 @@ export default function CupPreview({ recipe, setRecipe }: CupPreviewProps) {
   const CUP_HEIGHT_PX = 400;
   const cupPath = `M 0 0 L 20 400 L 180 400 L 200 0 Z`;
 
-  const visualScaleClass = recipe.cupSizeMl <= 355 ? "h-[300px]" : recipe.cupSizeMl <= 473 ? "h-[400px]" : "h-[500px]";
+  const visualScaleClass = recipe.cupSizeMl <= 355
+    ? "h-[210px] sm:h-[300px]"
+    : recipe.cupSizeMl <= 473
+      ? "h-[280px] sm:h-[400px]"
+      : "h-[350px] sm:h-[500px]";
 
   const MAX_CAPACITY_ML = recipe.cupSizeMl || 473;
-  const pxPerMl = CUP_HEIGHT_PX / MAX_CAPACITY_ML;
 
   // ── Ice Physics ──────────────────────────────────────────────────────────
   const isIced = recipe.temperature && recipe.temperature.level > 0;
@@ -86,6 +89,8 @@ export default function CupPreview({ recipe, setRecipe }: CupPreviewProps) {
       })
     : [];
 
+  const displayLayers = [...layers].reverse();
+
   // ── Deterministic pseudo-random ──────────────────────────────────────────
   const hash = (seed: number) => {
     let s = seed;
@@ -97,9 +102,9 @@ export default function CupPreview({ recipe, setRecipe }: CupPreviewProps) {
 
   return (
     <div className="w-full h-full flex items-center justify-center relative py-12 overflow-hidden mx-auto">
-      <div className={`relative flex items-center justify-center transition-all duration-500 ease-in-out w-full ${visualScaleClass}`}>
+      <div className={`relative flex items-center justify-center transition-all duration-500 ease-in-out w-full max-w-full ${visualScaleClass}`}>
         <svg 
-          viewBox="-50 0 400 440"
+          viewBox="-50 0 420 440"
           className="h-full w-auto drop-shadow-2xl overflow-visible absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"
         >
           <defs>
@@ -241,20 +246,22 @@ export default function CupPreview({ recipe, setRecipe }: CupPreviewProps) {
 
             {/* ── Draggable Layer Labels (right side) ── */}
             {layers.length > 0 && (
-              <foreignObject x={CUP_WIDTH_PX + 20} y="0" width="170" height={CUP_HEIGHT_PX} className="overflow-visible">
+              <foreignObject x={CUP_WIDTH_PX + 12} y="0" width="150" height={CUP_HEIGHT_PX} className="overflow-visible">
                 {setRecipe ? (
                   <Reorder.Group 
                     axis="y" 
-                    values={layers.map(l => l.id)} 
-                    onReorder={(newOrder) => setRecipe(prev => ({ ...prev, layerOrder: newOrder as string[] }))}
+                    values={displayLayers.map((layer) => layer.id)}
+                    onReorder={(newOrder) =>
+                      setRecipe((prev) => ({ ...prev, layerOrder: [...(newOrder as string[])].reverse() }))
+                    }
                     className="list-none m-0 p-0 flex flex-col gap-1.5"
                     style={{ paddingTop: Math.max(0, layers[layers.length - 1]?.y ?? 0) }}
                   >
-                    {layers.map((layer) => (
+                    {displayLayers.map((layer) => (
                       <Reorder.Item 
                         key={layer.id} 
                         value={layer.id}
-                        className="w-[150px] flex items-center gap-2.5 cursor-grab active:cursor-grabbing bg-white/80 backdrop-blur-md px-3 py-2 rounded-xl shadow-sm hover:shadow-md border border-white/60 transition-shadow select-none"
+                        className="w-[132px] sm:w-[140px] flex items-center gap-2.5 cursor-grab active:cursor-grabbing bg-white/80 backdrop-blur-md px-3 py-2 rounded-xl shadow-sm hover:shadow-md border border-white/60 transition-shadow select-none"
                         whileDrag={{ scale: 1.05, boxShadow: "0 8px 25px rgba(0,0,0,0.15)", zIndex: 50 }}
                       >
                         <div className="flex items-center gap-1 text-stone-300 shrink-0">
@@ -274,8 +281,8 @@ export default function CupPreview({ recipe, setRecipe }: CupPreviewProps) {
                   </Reorder.Group>
                 ) : (
                   <div className="flex flex-col gap-1.5" style={{ paddingTop: Math.max(0, layers[layers.length - 1]?.y ?? 0) }}>
-                    {layers.map(layer => (
-                      <div key={`guide-${layer.id}`} className="w-[150px] flex items-center gap-2.5 bg-white/50 backdrop-blur-sm px-3 py-2 rounded-xl shadow-sm border border-white/50 transition-all duration-500">
+                    {displayLayers.map(layer => (
+                      <div key={`guide-${layer.id}`} className="w-[132px] sm:w-[140px] flex items-center gap-2.5 bg-white/50 backdrop-blur-sm px-3 py-2 rounded-xl shadow-sm border border-white/50 transition-all duration-500">
                         <div className="w-3 h-3 rounded-full shrink-0 shadow-inner" style={{ backgroundColor: layer.color }} />
                         <span className="text-[11px] font-black text-stone-700 whitespace-nowrap overflow-hidden text-ellipsis leading-tight flex flex-col">
                           {layer.name}
@@ -318,12 +325,12 @@ export default function CupPreview({ recipe, setRecipe }: CupPreviewProps) {
       </div>
       
       {/* Capacity indicator */}
-      <div className="absolute left-6 bottom-6 flex flex-col items-start bg-white/70 backdrop-blur-md px-4 py-3 rounded-2xl border border-stone-200 shadow-xl">
+      <div className="absolute left-3 bottom-4 sm:left-6 sm:bottom-6 flex flex-col items-start bg-white/70 backdrop-blur-md px-3 py-2.5 sm:px-4 sm:py-3 rounded-2xl border border-stone-200 shadow-xl">
         <span className="text-[10px] uppercase font-black tracking-widest text-stone-400">용량</span>
-        <span className="text-2xl font-black text-stone-800 font-mono tracking-tighter">
+        <span className="text-xl sm:text-2xl font-black text-stone-800 font-mono tracking-tighter">
           {Math.round(totalOccupiedMl)}<span className="text-sm text-stone-400 font-medium">/{MAX_CAPACITY_ML}ml</span>
         </span>
-        <div className="w-32 bg-stone-200 h-2 mt-2 rounded-full overflow-hidden shadow-inner">
+        <div className="w-24 sm:w-32 bg-stone-200 h-2 mt-2 rounded-full overflow-hidden shadow-inner">
           <div 
             className={`h-full transition-all duration-300 ${fillPercentage > 100 ? 'bg-red-500' : 'bg-[#237227]'}`}
             style={{ width: `${Math.min(fillPercentage, 100)}%` }}

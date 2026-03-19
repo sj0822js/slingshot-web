@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useEffect, useSyncExternalStore, useState } from "react";
 import { Lock, ArrowRight } from "lucide-react";
 import { motion } from "framer-motion";
 
@@ -8,26 +8,52 @@ interface AdminGuardProps {
   children: React.ReactNode;
 }
 
+const ADMIN_AUTH_KEY = "adminAuth";
+const ADMIN_AUTH_EVENT = "admin-auth-updated";
+
+const subscribeAdminAuth = (onStoreChange: () => void) => {
+  window.addEventListener("storage", onStoreChange);
+  window.addEventListener(ADMIN_AUTH_EVENT, onStoreChange);
+
+  return () => {
+    window.removeEventListener("storage", onStoreChange);
+    window.removeEventListener(ADMIN_AUTH_EVENT, onStoreChange);
+  };
+};
+
+const getAdminAuthSnapshot = () => {
+  if (typeof window === "undefined") {
+    return false;
+  }
+
+  return sessionStorage.getItem(ADMIN_AUTH_KEY) === "true";
+};
+
 export default function AdminGuard({ children }: AdminGuardProps) {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [password, setPassword] = useState("");
   const [error, setError] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
+  const isAuthenticated = useSyncExternalStore(
+    subscribeAdminAuth,
+    getAdminAuthSnapshot,
+    () => false
+  );
 
   useEffect(() => {
-    setIsMounted(true);
-    const authStatus = sessionStorage.getItem("adminAuth");
-    if (authStatus === "true") {
-      setIsAuthenticated(true);
-    }
+    const mountId = window.requestAnimationFrame(() => {
+      setIsMounted(true);
+    });
+
+    return () => {
+      window.cancelAnimationFrame(mountId);
+    };
   }, []);
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
-    // Simple mock password: 'admin'
-    if (password === "admin") {
-      sessionStorage.setItem("adminAuth", "true");
-      setIsAuthenticated(true);
+    if (password === "7913") {
+      sessionStorage.setItem(ADMIN_AUTH_KEY, "true");
+      window.dispatchEvent(new Event(ADMIN_AUTH_EVENT));
       setError(false);
     } else {
       setError(true);
@@ -82,7 +108,6 @@ export default function AdminGuard({ children }: AdminGuardProps) {
         </form>
 
       </motion.div>
-      <p className="text-stone-600 text-xs mt-8">테스트용 암호: admin</p>
     </div>
   );
 }

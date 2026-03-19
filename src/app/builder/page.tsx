@@ -6,7 +6,7 @@ import IngredientPanel from "@/components/builder/IngredientPanel";
 import CupPreview from "@/components/builder/CupPreview";
 import PricePanel from "@/components/builder/PricePanel";
 import Header from "@/components/layout/Header";
-import { DrinkBase, Liquid, SubIngredient, Garnish, Temperature, ActiveRecipe } from "@/types/ingredient";
+import { ActiveRecipe } from "@/types/ingredient";
 import { useRecipes } from "@/contexts/RecipeContext";
 import { Save, Sparkles } from "lucide-react";
 
@@ -18,7 +18,7 @@ export default function BuilderPage() {
   const [recipeName, setRecipeName] = useState("");
 
   const [recipe, setRecipe] = useState<ActiveRecipe>({
-    cupSizeMl: 473,
+    cupSizeMl: 355,
     base: null,
     baseVolumeMl: 40,
     liquids: [],
