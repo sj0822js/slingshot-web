@@ -8,7 +8,6 @@ type HeroLandingProps = {
 };
 
 const SCROLL_THRESHOLD = 1660;
-const TOUCH_THRESHOLD = 320;
 
 const COPY_LINES = [
   "계절을 품은 금목서와 목련을 가꾸고",
@@ -99,7 +98,7 @@ export default function HeroLanding({ onComplete }: HeroLandingProps) {
 
       event.preventDefault();
 
-      const next = clamp(touchBaseProgress.current + delta * 1.1, 0, SCROLL_THRESHOLD);
+      const next = clamp(touchBaseProgress.current + delta * 0.55, 0, SCROLL_THRESHOLD);
       progressRef.current = next;
       setProgress(next);
     };
@@ -110,13 +109,13 @@ export default function HeroLanding({ onComplete }: HeroLandingProps) {
       }
 
       const totalSwipe = (touchStartY.current ?? 0) - (touchLastY.current ?? touchStartY.current);
-      if (totalSwipe > 44 && progressRef.current < SCROLL_THRESHOLD) {
-        const next = clamp(progressRef.current + totalSwipe * 0.55, 0, SCROLL_THRESHOLD);
+      if (totalSwipe > 56 && progressRef.current < SCROLL_THRESHOLD) {
+        const next = clamp(progressRef.current + totalSwipe * 0.275, 0, SCROLL_THRESHOLD);
         progressRef.current = next;
         setProgress(next);
       }
 
-      if (progressRef.current >= SCROLL_THRESHOLD - TOUCH_THRESHOLD) {
+      if (progressRef.current >= SCROLL_THRESHOLD) {
         completeHero();
       }
 
@@ -149,7 +148,7 @@ export default function HeroLanding({ onComplete }: HeroLandingProps) {
   const titleOpacity = logoPhase * (1 - exitProgress * 0.2);
   const titleY = 10 - logoPhase * 10 - (1 - logoPhase) * 28;
   const titleScale = 0.96 + logoPhase * 0.04;
-  const titleBlur = (1 - logoPhase) * 5.6;
+  const titleBlur = (1 - logoPhase) * 2.8;
 
   const indicatorOpacity = isTransitioning ? 0 : Math.max(0.24, 1 - exitProgress * 0.82);
   const indicatorLabel =
@@ -178,7 +177,7 @@ export default function HeroLanding({ onComplete }: HeroLandingProps) {
       >
         <div className="pointer-events-none absolute inset-0 flex items-center">
           <div className="mx-auto w-full max-w-5xl px-6 sm:px-10">
-            <div className="relative w-full max-w-3xl pl-[40pt] text-left">
+            <div className="relative w-full max-w-3xl pl-[5vw] text-left">
               <motion.h1
                 initial={{ opacity: 0, y: 18 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -204,7 +203,7 @@ export default function HeroLanding({ onComplete }: HeroLandingProps) {
                     style={{
                       opacity: linePhase * (1 - exitProgress * 0.25),
                       y: 18 - linePhase * 18 - (1 - linePhase) * 10 - exitProgress * 18,
-                      filter: `blur(${(1 - linePhase) * 4.8}px)`,
+                      filter: `blur(${(1 - linePhase) * 2.4}px)`,
                       clipPath: `inset(${(1 - linePhase) * 100}% 0 0 0)`,
                     }}
                   >

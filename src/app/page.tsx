@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useSyncExternalStore } from "react";
 import Header from "@/components/layout/Header";
 import HeroLanding from "@/components/hero/HeroLanding";
 import { useLanguage } from "@/contexts/LanguageContext";
@@ -9,13 +9,41 @@ import { motion } from "framer-motion";
 import Link from "next/link";
 import { useRecipes } from "@/contexts/RecipeContext";
 
+const HERO_CACHE_KEY = "slingshot-hero-dismissed-at";
+const HERO_CACHE_MS = 60 * 60 * 1000;
+const HERO_CACHE_EVENT = "slingshot-hero-cache-updated";
+
+const subscribeHeroCache = (onStoreChange: () => void) => {
+  window.addEventListener("storage", onStoreChange);
+  window.addEventListener(HERO_CACHE_EVENT, onStoreChange);
+
+  return () => {
+    window.removeEventListener("storage", onStoreChange);
+    window.removeEventListener(HERO_CACHE_EVENT, onStoreChange);
+  };
+};
+
+const getHeroVisibilitySnapshot = () => {
+  if (typeof window === "undefined") {
+    return true;
+  }
+
+  const cachedAt = window.localStorage.getItem(HERO_CACHE_KEY);
+  return cachedAt !== null && Date.now() - Number(cachedAt) < HERO_CACHE_MS;
+};
+
 export default function Home() {
   const { t } = useLanguage();
   const { savedRecipes } = useRecipes();
-  const [enteredMain, setEnteredMain] = useState(false);
+  const enteredMain = useSyncExternalStore(
+    subscribeHeroCache,
+    getHeroVisibilitySnapshot,
+    () => true
+  );
 
   const handleHeroComplete = useCallback(() => {
-    setEnteredMain(true);
+    localStorage.setItem(HERO_CACHE_KEY, String(Date.now()));
+    window.dispatchEvent(new Event(HERO_CACHE_EVENT));
   }, []);
 
   useEffect(() => {
