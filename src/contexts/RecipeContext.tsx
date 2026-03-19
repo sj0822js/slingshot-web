@@ -18,38 +18,47 @@ interface RecipeContextType {
 
 const STORAGE_KEY = "slinshot_saved_recipes";
 
+const normalizeRecipe = (recipe: SavedRecipe): SavedRecipe => ({
+  ...recipe,
+  layerOrder: recipe.layerOrder ?? [],
+  garnishOrder: recipe.garnishOrder ?? [],
+});
+
+const loadSavedRecipes = () => {
+  if (typeof window === "undefined") {
+    return [];
+  }
+
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (raw) {
+      return (JSON.parse(raw) as SavedRecipe[]).map(normalizeRecipe);
+    }
+  } catch (e) {
+    console.error("Failed to load saved recipes", e);
+  }
+
+  return [];
+};
+
 const RecipeContext = createContext<RecipeContextType | undefined>(undefined);
 
 export const RecipeProvider = ({ children }: { children: ReactNode }) => {
-  const [savedRecipes, setSavedRecipes] = useState<SavedRecipe[]>([]);
-  const [isLoaded, setIsLoaded] = useState(false);
+  const [savedRecipes, setSavedRecipes] = useState<SavedRecipe[]>(loadSavedRecipes);
 
-  // Load from localStorage on mount
   useEffect(() => {
     try {
-      const raw = localStorage.getItem(STORAGE_KEY);
-      if (raw) {
-        setSavedRecipes(JSON.parse(raw));
-      }
-    } catch (e) {
-      console.error("Failed to load saved recipes", e);
-    }
-    setIsLoaded(true);
-  }, []);
-
-  // Persist to localStorage whenever savedRecipes changes (after initial load)
-  useEffect(() => {
-    if (!isLoaded) return;
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(savedRecipes));
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(savedRecipes.map(normalizeRecipe)));
     } catch (e) {
       console.error("Failed to save recipes to localStorage", e);
     }
-  }, [savedRecipes, isLoaded]);
+  }, [savedRecipes]);
 
   const saveRecipe = (name: string, recipe: ActiveRecipe, isOfficial: boolean = false) => {
     const newRecord: SavedRecipe = {
       ...recipe,
+      layerOrder: recipe.layerOrder ?? [],
+      garnishOrder: recipe.garnishOrder ?? [],
       id: `recipe_${Date.now()}`,
       name: name || "My Custom Drink",
       createdAt: new Date().toISOString(),

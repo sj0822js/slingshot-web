@@ -36,24 +36,40 @@ const DEFAULT_SETTINGS: PricingSettings = {
 
 const STORAGE_KEY = "slinshot_pricing_settings";
 
+const loadPricingSettings = (): PricingSettings => {
+  if (typeof window === "undefined") {
+    return DEFAULT_SETTINGS;
+  }
+
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) {
+      return DEFAULT_SETTINGS;
+    }
+
+    const parsed = JSON.parse(raw) as Partial<PricingSettings>;
+    return {
+      ...DEFAULT_SETTINGS,
+      ...parsed,
+      cupSizeFees: {
+        ...DEFAULT_SETTINGS.cupSizeFees,
+        ...(parsed.cupSizeFees ?? {}),
+      },
+      ingredientPrices: parsed.ingredientPrices ?? [],
+    };
+  } catch {
+    return DEFAULT_SETTINGS;
+  }
+};
+
 const PricingContext = createContext<PricingContextType | undefined>(undefined);
 
 export function PricingProvider({ children }: { children: React.ReactNode }) {
-  const [settings, setSettings] = useState<PricingSettings>(DEFAULT_SETTINGS);
-  const [isLoaded, setIsLoaded] = useState(false);
+  const [settings, setSettings] = useState<PricingSettings>(loadPricingSettings);
 
   useEffect(() => {
-    try {
-      const raw = localStorage.getItem(STORAGE_KEY);
-      if (raw) setSettings({ ...DEFAULT_SETTINGS, ...JSON.parse(raw) });
-    } catch { /* ignore */ }
-    setIsLoaded(true);
-  }, []);
-
-  useEffect(() => {
-    if (!isLoaded) return;
     localStorage.setItem(STORAGE_KEY, JSON.stringify(settings));
-  }, [settings, isLoaded]);
+  }, [settings]);
 
   const updateSettings = (updates: Partial<PricingSettings>) => {
     setSettings((prev) => ({ ...prev, ...updates }));

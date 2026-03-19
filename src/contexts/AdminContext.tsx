@@ -1,6 +1,6 @@
 "use client";
 
-import React, { createContext, useContext, useState, useEffect } from "react";
+import React, { createContext, useContext, useState } from "react";
 
 interface TrendDrink {
   id: string;
@@ -19,41 +19,47 @@ interface AdminContextType {
 
 const AdminContext = createContext<AdminContextType | undefined>(undefined);
 
-export function AdminProvider({ children }: { children: React.ReactNode }) {
-  const [appName, setAppNameState] = useState("SLINSHOT : FILL YOUR DAY");
-  const [logoUrl, setLogoUrlState] = useState<string | null>(null);
-  const [trendDrinks, setTrendDrinksState] = useState<TrendDrink[]>([]);
-  const [isLoaded, setIsLoaded] = useState(false);
+const DEFAULT_TREND_DRINKS: TrendDrink[] = [
+  { id: "td1", url: "/images/trend_drink_matcha_espresso.png", link: "#" },
+  { id: "td2", url: "/images/trend_drink_strawberry_latte.png", link: "#" },
+  { id: "td3", url: "/images/trend_drink_blue_ocean_ade.png", link: "#" },
+  { id: "td4", url: "/images/trend_drink_caramel_einspanner.png", link: "#" },
+];
 
-  // Load from localStorage on mount
-  useEffect(() => {
-    const savedName = localStorage.getItem("admin_appName");
-    if (savedName) setAppNameState(savedName);
+const loadAdminState = () => {
+  if (typeof window === "undefined") {
+    return {
+      appName: "SLINSHOT : FILL YOUR DAY",
+      logoUrl: null as string | null,
+      trendDrinks: DEFAULT_TREND_DRINKS,
+    };
+  }
 
-    const savedLogo = localStorage.getItem("admin_logoUrl");
-    if (savedLogo) setLogoUrlState(savedLogo);
+  const savedName = localStorage.getItem("admin_appName") || "SLINSHOT : FILL YOUR DAY";
+  const savedLogo = localStorage.getItem("admin_logoUrl");
 
+  try {
     const savedTrends = localStorage.getItem("admin_trendDrinks");
-    if (savedTrends) {
-      try {
-        setTrendDrinksState(JSON.parse(savedTrends));
-      } catch (e) {
-        console.error("Failed to parse trend drinks", e);
-      }
-    }
-    
-    // Fallback Mock Trends if empty
-    if (!savedTrends || JSON.parse(savedTrends).length === 0) {
-      setTrendDrinksState([
-         { id: "td1", url: "/images/trend_drink_matcha_espresso.png", link: "#" },
-         { id: "td2", url: "/images/trend_drink_strawberry_latte.png", link: "#" },
-         { id: "td3", url: "/images/trend_drink_blue_ocean_ade.png", link: "#" },
-         { id: "td4", url: "/images/trend_drink_caramel_einspanner.png", link: "#" },
-      ]);
-    }
-    
-    setIsLoaded(true);
-  }, []);
+    const parsedTrends = savedTrends ? (JSON.parse(savedTrends) as TrendDrink[]) : [];
+    return {
+      appName: savedName,
+      logoUrl: savedLogo,
+      trendDrinks: parsedTrends.length > 0 ? parsedTrends : DEFAULT_TREND_DRINKS,
+    };
+  } catch {
+    return {
+      appName: savedName,
+      logoUrl: savedLogo,
+      trendDrinks: DEFAULT_TREND_DRINKS,
+    };
+  }
+};
+
+export function AdminProvider({ children }: { children: React.ReactNode }) {
+  const initialState = loadAdminState();
+  const [appName, setAppNameState] = useState(initialState.appName);
+  const [logoUrl, setLogoUrlState] = useState<string | null>(initialState.logoUrl);
+  const [trendDrinks, setTrendDrinksState] = useState<TrendDrink[]>(initialState.trendDrinks);
 
   const setAppName = (name: string) => {
     setAppNameState(name);
@@ -70,8 +76,6 @@ export function AdminProvider({ children }: { children: React.ReactNode }) {
     setTrendDrinksState(drinks);
     localStorage.setItem("admin_trendDrinks", JSON.stringify(drinks));
   };
-
-  if (!isLoaded) return null; // Prevent hydration mismatch
 
   return (
     <AdminContext.Provider
