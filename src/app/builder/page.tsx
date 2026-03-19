@@ -26,6 +26,7 @@ export default function BuilderPage() {
     garnishes: [],
     temperature: null,
     layerOrder: [],
+    garnishOrder: [],
   });
 
   const handleSave = () => {
@@ -52,7 +53,7 @@ export default function BuilderPage() {
         )}
 
         {/* Left Column: Input Panel */}
-        <section className="bg-white rounded-3xl shadow-sm border border-[#519A66]/15 overflow-hidden flex flex-col h-[700px]">
+        <section className="bg-white rounded-3xl shadow-sm border border-[#519A66]/15 overflow-hidden flex flex-col lg:h-[700px]">
           <div className="p-6 border-b border-[#519A66]/10 flex items-center justify-between bg-[#237227]">
             <div>
               <h2 className="text-2xl font-black text-white tracking-tight">음료 빌더</h2>
@@ -68,14 +69,14 @@ export default function BuilderPage() {
               저장하기
             </button>
           </div>
-          <div className="flex-1 overflow-y-auto p-6">
+          <div className="flex-1 p-6 lg:overflow-y-auto">
              <IngredientPanel recipe={recipe} setRecipe={setRecipe} />
           </div>
         </section>
 
         {/* Right Column: Live Cup Preview + Price */}
         <div className="flex flex-col gap-4">
-          <section className="bg-white rounded-3xl shadow-sm border border-[#519A66]/15 p-8 flex flex-col items-center justify-center flex-1 relative overflow-hidden min-h-[520px]">
+          <section className="bg-white rounded-3xl shadow-sm border border-[#519A66]/15 p-6 sm:p-8 flex flex-col items-center justify-center flex-1 relative min-h-[520px] overflow-visible">
             {/* Subtle grid background */}
             <div className="absolute inset-0 opacity-[0.025] pointer-events-none" style={{ backgroundImage: 'linear-gradient(to right, #237227 1px, transparent 1px), linear-gradient(to bottom, #237227 1px, transparent 1px)', backgroundSize: '20px 20px' }} />
             

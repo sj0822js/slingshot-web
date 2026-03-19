@@ -1,10 +1,10 @@
 "use client";
 
-import React, { createContext, useContext, useState, useEffect, ReactNode } from "react";
+import React, { createContext, useContext, useEffect, useState, ReactNode } from "react";
 import { IngredientItem } from "@/types/ingredient";
 import { allMockIngredients } from "@/data/mockIngredients";
 
-const CUSTOM_INGREDIENTS_KEY = "slinshot_custom_ingredients";
+const INGREDIENTS_STORAGE_KEY = "slingshot_ingredients";
 
 interface IngredientContextType {
   ingredients: IngredientItem[];
@@ -16,30 +16,26 @@ interface IngredientContextType {
 const IngredientContext = createContext<IngredientContextType | undefined>(undefined);
 
 export const IngredientProvider = ({ children }: { children: ReactNode }) => {
-  // Start with mock ingredients, then layer in persisted custom ones
-  const [ingredients, setIngredients] = useState<IngredientItem[]>(allMockIngredients);
-  const [isLoaded, setIsLoaded] = useState(false);
+  const [ingredients, setIngredients] = useState<IngredientItem[]>(() => {
+    if (typeof window === "undefined") {
+      return allMockIngredients;
+    }
 
-  // Load custom ingredients from localStorage
-  useEffect(() => {
     try {
-      const raw = localStorage.getItem(CUSTOM_INGREDIENTS_KEY);
+      const raw = localStorage.getItem(INGREDIENTS_STORAGE_KEY);
       if (raw) {
-        const custom: IngredientItem[] = JSON.parse(raw);
-        // Merge: mock first, then custom (avoid duplicates)
-        setIngredients([...allMockIngredients, ...custom]);
+        return JSON.parse(raw) as IngredientItem[];
       }
-    } catch { /* ignore */ }
-    setIsLoaded(true);
-  }, []);
+    } catch {
+      return allMockIngredients;
+    }
 
-  // Persist only custom (non-mock) ingredients
+    return allMockIngredients;
+  });
+
   useEffect(() => {
-    if (!isLoaded) return;
-    const mockIds = new Set(allMockIngredients.map((i) => i.id));
-    const custom = ingredients.filter((i) => !mockIds.has(i.id));
-    localStorage.setItem(CUSTOM_INGREDIENTS_KEY, JSON.stringify(custom));
-  }, [ingredients, isLoaded]);
+    localStorage.setItem(INGREDIENTS_STORAGE_KEY, JSON.stringify(ingredients));
+  }, [ingredients]);
 
   const addIngredient = (item: IngredientItem) => {
     setIngredients((prev) => [...prev, item]);

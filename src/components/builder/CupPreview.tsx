@@ -90,6 +90,27 @@ export default function CupPreview({ recipe, setRecipe }: CupPreviewProps) {
     : [];
 
   const displayLayers = [...layers].reverse();
+  const orderedGarnishes = [...recipe.garnishes].sort((a, b) => {
+    const order = recipe.garnishOrder ?? [];
+    const indexA = order.indexOf(a.item.id);
+    const indexB = order.indexOf(b.item.id);
+    if (indexA === -1 && indexB === -1) return 0;
+    if (indexA === -1) return 1;
+    if (indexB === -1) return -1;
+    return indexA - indexB;
+  });
+
+  const updateGarnishOrder = (newOrder: string[]) => {
+    if (!setRecipe) {
+      return;
+    }
+
+    setRecipe((prev) => ({
+      ...prev,
+      garnishOrder: newOrder,
+      garnishes: [...prev.garnishes].sort((a, b) => newOrder.indexOf(a.item.id) - newOrder.indexOf(b.item.id)),
+    }));
+  };
 
   // ── Deterministic pseudo-random ──────────────────────────────────────────
   const hash = (seed: number) => {
@@ -101,10 +122,10 @@ export default function CupPreview({ recipe, setRecipe }: CupPreviewProps) {
   };
 
   return (
-    <div className="w-full h-full flex items-center justify-center relative py-12 overflow-hidden mx-auto">
+    <div className="w-full h-full flex items-center justify-center relative py-12 overflow-visible mx-auto">
       <div className={`relative flex items-center justify-center transition-all duration-500 ease-in-out w-full max-w-full ${visualScaleClass}`}>
         <svg 
-          viewBox="-50 0 420 440"
+          viewBox="-50 0 290 440"
           className="h-full w-auto drop-shadow-2xl overflow-visible absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"
         >
           <defs>
@@ -244,64 +265,15 @@ export default function CupPreview({ recipe, setRecipe }: CupPreviewProps) {
               </g>
             </g>
 
-            {/* ── Draggable Layer Labels (right side) ── */}
-            {layers.length > 0 && (
-              <foreignObject x={CUP_WIDTH_PX + 12} y="0" width="150" height={CUP_HEIGHT_PX} className="overflow-visible">
-                {setRecipe ? (
-                  <Reorder.Group 
-                    axis="y" 
-                    values={displayLayers.map((layer) => layer.id)}
-                    onReorder={(newOrder) =>
-                      setRecipe((prev) => ({ ...prev, layerOrder: [...(newOrder as string[])].reverse() }))
-                    }
-                    className="list-none m-0 p-0 flex flex-col gap-1.5"
-                    style={{ paddingTop: Math.max(0, layers[layers.length - 1]?.y ?? 0) }}
-                  >
-                    {displayLayers.map((layer) => (
-                      <Reorder.Item 
-                        key={layer.id} 
-                        value={layer.id}
-                        className="w-[132px] sm:w-[140px] flex items-center gap-2.5 cursor-grab active:cursor-grabbing bg-white/80 backdrop-blur-md px-3 py-2 rounded-xl shadow-sm hover:shadow-md border border-white/60 transition-shadow select-none"
-                        whileDrag={{ scale: 1.05, boxShadow: "0 8px 25px rgba(0,0,0,0.15)", zIndex: 50 }}
-                      >
-                        <div className="flex items-center gap-1 text-stone-300 shrink-0">
-                          <svg width="8" height="14" viewBox="0 0 8 14" fill="currentColor">
-                            <circle cx="2" cy="2" r="1.2"/><circle cx="6" cy="2" r="1.2"/>
-                            <circle cx="2" cy="7" r="1.2"/><circle cx="6" cy="7" r="1.2"/>
-                            <circle cx="2" cy="12" r="1.2"/><circle cx="6" cy="12" r="1.2"/>
-                          </svg>
-                        </div>
-                        <div className="w-3 h-3 rounded-full shrink-0 shadow-inner" style={{ backgroundColor: layer.color }} />
-                        <span className="text-[11px] font-black text-stone-700 whitespace-nowrap overflow-hidden text-ellipsis leading-tight flex flex-col">
-                          {layer.name}
-                          <span className="text-[9px] text-stone-400 font-bold tracking-widest uppercase">{layer.amount}</span>
-                        </span>
-                      </Reorder.Item>
-                    ))}
-                  </Reorder.Group>
-                ) : (
-                  <div className="flex flex-col gap-1.5" style={{ paddingTop: Math.max(0, layers[layers.length - 1]?.y ?? 0) }}>
-                    {displayLayers.map(layer => (
-                      <div key={`guide-${layer.id}`} className="w-[132px] sm:w-[140px] flex items-center gap-2.5 bg-white/50 backdrop-blur-sm px-3 py-2 rounded-xl shadow-sm border border-white/50 transition-all duration-500">
-                        <div className="w-3 h-3 rounded-full shrink-0 shadow-inner" style={{ backgroundColor: layer.color }} />
-                        <span className="text-[11px] font-black text-stone-700 whitespace-nowrap overflow-hidden text-ellipsis leading-tight flex flex-col">
-                          {layer.name}
-                          <span className="text-[9px] text-stone-400 font-bold tracking-widest uppercase">{layer.amount}</span>
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </foreignObject>
-            )}
-
             {/* Garnishes at the top of liquid */}
             <g transform={`translate(0, ${Math.max(5, currentY - 15)})`} className="transition-all duration-500">
-              {recipe.garnishes.map((g, i) => {
+              {orderedGarnishes.map((g, i) => {
                 if (g.amountGs <= 0) return null;
                 const iconName = g.item.iconType as keyof typeof LucideIcons | undefined;
                 const IconRef = (iconName && LucideIcons[iconName]) as React.ElementType || LucideIcons.Droplet;
-                const horizontalPos = 40 + (i * 45 % (CUP_WIDTH_PX - 80));
+                const count = Math.max(orderedGarnishes.length, 1);
+                const usableWidth = CUP_WIDTH_PX - 90;
+                const horizontalPos = 45 + (count === 1 ? usableWidth / 2 : (usableWidth / Math.max(count - 1, 1)) * i);
                 return (
                   <g key={`gnish-${g.item.id}`} transform={`translate(${horizontalPos}, 0)`}>
                     <foreignObject x="-16" y="-16" width="32" height="32" className="overflow-visible">
@@ -323,6 +295,89 @@ export default function CupPreview({ recipe, setRecipe }: CupPreviewProps) {
           </g>
         </svg>
       </div>
+
+      {layers.length > 0 && (
+        <div className="absolute left-[calc(50%+72px)] top-1/2 z-10 flex -translate-y-1/2 flex-col gap-1.5 sm:left-[calc(50%+86px)]">
+          {setRecipe ? (
+            <Reorder.Group
+              axis="y"
+              values={displayLayers.map((layer) => layer.id)}
+              onReorder={(newOrder) =>
+                setRecipe((prev) => ({ ...prev, layerOrder: [...(newOrder as string[])].reverse() }))
+              }
+              className="list-none m-0 flex flex-col gap-1.5 p-0"
+            >
+              {displayLayers.map((layer) => (
+                <Reorder.Item
+                  key={layer.id}
+                  value={layer.id}
+                  className="w-[118px] sm:w-[126px] flex items-center gap-2 cursor-grab active:cursor-grabbing bg-white/88 backdrop-blur-md px-2.5 py-2 rounded-xl shadow-sm border border-white/70 select-none"
+                  whileDrag={{ scale: 1.04, boxShadow: "0 8px 25px rgba(0,0,0,0.15)", zIndex: 40 }}
+                >
+                  <div className="w-2.5 h-2.5 rounded-full shrink-0 shadow-inner" style={{ backgroundColor: layer.color }} />
+                  <span className="text-[10px] sm:text-[11px] font-black text-stone-700 whitespace-nowrap overflow-hidden text-ellipsis leading-tight flex flex-col">
+                    {layer.name}
+                    <span className="text-[8px] sm:text-[9px] text-stone-400 font-bold tracking-widest uppercase">{layer.amount}</span>
+                  </span>
+                </Reorder.Item>
+              ))}
+            </Reorder.Group>
+          ) : (
+            displayLayers.map((layer) => (
+              <div key={`guide-${layer.id}`} className="w-[118px] sm:w-[126px] flex items-center gap-2 bg-white/80 backdrop-blur-sm px-2.5 py-2 rounded-xl shadow-sm border border-white/60">
+                <div className="w-2.5 h-2.5 rounded-full shrink-0 shadow-inner" style={{ backgroundColor: layer.color }} />
+                <span className="text-[10px] sm:text-[11px] font-black text-stone-700 whitespace-nowrap overflow-hidden text-ellipsis leading-tight flex flex-col">
+                  {layer.name}
+                  <span className="text-[8px] sm:text-[9px] text-stone-400 font-bold tracking-widest uppercase">{layer.amount}</span>
+                </span>
+              </div>
+            ))
+          )}
+        </div>
+      )}
+
+      {orderedGarnishes.length > 0 && (
+        <div className="absolute left-1/2 top-[calc(50%-170px)] z-10 flex w-[220px] -translate-x-1/2 justify-center sm:top-[calc(50%-195px)] sm:w-[260px]">
+          {setRecipe ? (
+            <Reorder.Group
+              axis="x"
+              values={orderedGarnishes.map((garnish) => garnish.item.id)}
+              onReorder={(newOrder) => updateGarnishOrder(newOrder as string[])}
+              className="list-none m-0 flex flex-wrap items-center justify-center gap-2 p-0"
+            >
+              {orderedGarnishes.map((garnish) => (
+                <Reorder.Item
+                  key={garnish.item.id}
+                  value={garnish.item.id}
+                  className="flex items-center gap-1.5 rounded-full border border-white/70 bg-white/90 px-3 py-1.5 text-[10px] sm:text-[11px] font-black text-stone-700 shadow-sm cursor-grab active:cursor-grabbing"
+                  whileDrag={{ scale: 1.04, boxShadow: "0 8px 25px rgba(0,0,0,0.15)", zIndex: 40 }}
+                >
+                  <div
+                    className="h-2.5 w-2.5 rounded-full border border-black/10"
+                    style={{ backgroundColor: garnish.item.colorHex || "#d6d3d1" }}
+                  />
+                  <span>{garnish.item.name}</span>
+                </Reorder.Item>
+              ))}
+            </Reorder.Group>
+          ) : (
+            <div className="flex flex-wrap items-center justify-center gap-2">
+              {orderedGarnishes.map((garnish) => (
+                <div
+                  key={`garnish-chip-${garnish.item.id}`}
+                  className="flex items-center gap-1.5 rounded-full border border-white/70 bg-white/90 px-3 py-1.5 text-[10px] sm:text-[11px] font-black text-stone-700 shadow-sm"
+                >
+                  <div
+                    className="h-2.5 w-2.5 rounded-full border border-black/10"
+                    style={{ backgroundColor: garnish.item.colorHex || "#d6d3d1" }}
+                  />
+                  <span>{garnish.item.name}</span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
       
       {/* Capacity indicator */}
       <div className="absolute left-3 bottom-4 sm:left-6 sm:bottom-6 flex flex-col items-start bg-white/70 backdrop-blur-md px-3 py-2.5 sm:px-4 sm:py-3 rounded-2xl border border-stone-200 shadow-xl">

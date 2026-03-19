@@ -53,4 +53,5 @@ export interface ActiveRecipe {
   garnishes: { item: Garnish; amountGs: number }[];
   temperature: Temperature | null;
   layerOrder: string[]; // Order of base/liquid/syrup IDs from bottom to top
+  garnishOrder: string[]; // Order of garnish IDs from left to right on preview
 }

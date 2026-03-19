@@ -1,7 +1,7 @@
 "use client";
 
 import { useIngredients } from "@/contexts/IngredientContext";
-import { DrinkBase, Liquid, SubIngredient, Garnish, IngredientCategory, Temperature, ActiveRecipe } from "@/types/ingredient";
+import { DrinkBase, Liquid, SubIngredient, Garnish, IngredientCategory, Temperature, ActiveRecipe, IngredientItem } from "@/types/ingredient";
 import { Plus, X, ThermometerSun, Droplet, Cloud, Sun, Leaf, Sparkles, Cherry, Flower2, CloudRain, Star } from "lucide-react";
 import { useState } from "react";
 
@@ -112,9 +112,17 @@ export default function IngredientPanel({ recipe, setRecipe }: IngredientPanelPr
     setRecipe((prev) => {
       const exists = prev.garnishes.some(i => i.item.id === garnishItem.id);
       if (exists) {
-        return { ...prev, garnishes: prev.garnishes.filter(i => i.item.id !== garnishItem.id) };
+        return {
+          ...prev,
+          garnishes: prev.garnishes.filter(i => i.item.id !== garnishItem.id),
+          garnishOrder: prev.garnishOrder.filter((id) => id !== garnishItem.id),
+        };
       }
-      return { ...prev, garnishes: [...prev.garnishes, { item: garnishItem, amountGs: 10 }] };
+      return {
+        ...prev,
+        garnishes: [...prev.garnishes, { item: garnishItem, amountGs: 10 }],
+        garnishOrder: [...prev.garnishOrder, garnishItem.id],
+      };
     });
   };
 
@@ -137,17 +145,65 @@ export default function IngredientPanel({ recipe, setRecipe }: IngredientPanelPr
     if (!newItemName.trim() || !addCategory) return;
     
     const newId = `custom_${Date.now()}`;
-    const baseItem = {
-      id: newId,
-      category: addCategory,
-      name: newItemName,
-      colorHex: newItemColor,
-      iconType: newItemIcon,
-    };
+    let newIngredient: IngredientItem;
 
-    // Cast specific fields to satisfy typescript types dynamically depending on what we add
-    // The exact type properties aren't strictly validated on the UI besides what we use for render anyway
-    addIngredient(baseItem as any);
+    switch (addCategory) {
+      case "base":
+        newIngredient = {
+          id: newId,
+          category: "base",
+          name: newItemName,
+          colorHex: newItemColor,
+          iconType: newItemIcon,
+          dosingGrams: 20,
+          extractionGrams: 40,
+          extractionSeconds: 30,
+          extractionTemp: 93,
+        };
+        break;
+      case "liquid":
+        newIngredient = {
+          id: newId,
+          category: "liquid",
+          name: newItemName,
+          colorHex: newItemColor,
+          iconType: newItemIcon,
+          defaultVolumeMl: 30,
+        };
+        break;
+      case "temperature":
+        newIngredient = {
+          id: newId,
+          category: "temperature",
+          name: newItemName,
+          colorHex: newItemColor,
+          iconType: newItemIcon,
+          level: 0,
+          description: "",
+        };
+        break;
+      case "subIngredient":
+        newIngredient = {
+          id: newId,
+          category: "subIngredient",
+          name: newItemName,
+          colorHex: newItemColor,
+          iconType: newItemIcon,
+          flavorCategory: "other",
+        };
+        break;
+      case "garnish":
+        newIngredient = {
+          id: newId,
+          category: "garnish",
+          name: newItemName,
+          colorHex: newItemColor,
+          iconType: newItemIcon,
+        };
+        break;
+    }
+
+    addIngredient(newIngredient);
     setIsAdding(false);
   };
 
