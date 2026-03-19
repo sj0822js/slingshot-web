@@ -34,6 +34,7 @@ export default function HeroLanding({ onComplete }: HeroLandingProps) {
   const [progress, setProgress] = useState(0);
   const [isTransitioning, setIsTransitioning] = useState(false);
   const touchStartY = useRef<number | null>(null);
+  const touchLastY = useRef<number | null>(null);
   const touchBaseProgress = useRef(0);
   const progressRef = useRef(0);
   const transitionRef = useRef(false);
@@ -83,6 +84,7 @@ export default function HeroLanding({ onComplete }: HeroLandingProps) {
 
     const handleTouchStart = (event: TouchEvent) => {
       touchStartY.current = event.touches[0]?.clientY ?? null;
+      touchLastY.current = touchStartY.current;
       touchBaseProgress.current = progressRef.current;
     };
 
@@ -93,6 +95,9 @@ export default function HeroLanding({ onComplete }: HeroLandingProps) {
 
       const currentY = event.touches[0]?.clientY ?? touchStartY.current;
       const delta = touchStartY.current - currentY;
+      touchLastY.current = currentY;
+
+      event.preventDefault();
 
       const next = clamp(touchBaseProgress.current + delta * 2.2, 0, SCROLL_THRESHOLD);
       progressRef.current = next;
@@ -104,17 +109,25 @@ export default function HeroLanding({ onComplete }: HeroLandingProps) {
         return;
       }
 
+      const totalSwipe = (touchStartY.current ?? 0) - (touchLastY.current ?? touchStartY.current);
+      if (totalSwipe > 36 && progressRef.current < SCROLL_THRESHOLD) {
+        const next = clamp(progressRef.current + totalSwipe * 1.1, 0, SCROLL_THRESHOLD);
+        progressRef.current = next;
+        setProgress(next);
+      }
+
       if (progressRef.current >= SCROLL_THRESHOLD - TOUCH_THRESHOLD) {
         completeHero();
       }
 
       touchStartY.current = null;
+      touchLastY.current = null;
     };
 
     window.addEventListener("wheel", handleWheel, { passive: true });
     window.addEventListener("keydown", handleKeyDown);
     window.addEventListener("touchstart", handleTouchStart, { passive: true });
-    window.addEventListener("touchmove", handleTouchMove, { passive: true });
+    window.addEventListener("touchmove", handleTouchMove, { passive: false });
     window.addEventListener("touchend", handleTouchEnd);
 
     return () => {
@@ -144,7 +157,7 @@ export default function HeroLanding({ onComplete }: HeroLandingProps) {
 
   return (
     <motion.section
-      className="relative flex min-h-screen items-center justify-center overflow-hidden bg-[#031c03]"
+      className="relative flex min-h-screen items-center justify-center overflow-hidden bg-[#031c03] touch-none"
       animate={{
         opacity: isTransitioning ? 0 : 1,
         scale: isTransitioning ? 1.02 : 1,
