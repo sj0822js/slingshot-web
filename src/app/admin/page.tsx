@@ -9,7 +9,7 @@ import { DrinkBase } from "@/types/ingredient";
 import {
   Upload, Sparkles, LayoutPanelTop, MonitorSmartphone, Image as ImageIcon,
   Users, MousePointerClick, Coffee, Settings2, Link as LinkIcon, PlusCircle,
-  Check, Droplet, Timer, ThermometerSun, Plus, Edit2, X, BookOpen, Receipt,
+  Check, Droplet, Timer, ThermometerSun, Plus, X, BookOpen, Receipt,
 } from "lucide-react";
 import { motion } from "framer-motion";
 import AdminGuard from "@/components/auth/AdminGuard";
@@ -77,7 +77,6 @@ export default function SuperAdminPage() {
   }, [pricing, ingredients, getIngredientPrice]);
 
   // Espresso editor states
-  const [editingBaseId, setEditingBaseId] = useState<string | null>(null);
   const [isAddingBase, setIsAddingBase] = useState(false);
   const [newBaseName, setNewBaseName] = useState("");
   const [newBaseOrigin, setNewBaseOrigin] = useState("");
@@ -482,25 +481,13 @@ export default function SuperAdminPage() {
                     {/* Name + Origin Row */}
                     <div className="flex items-center gap-2 mb-3">
                       <span className="w-3 h-3 rounded-full shadow-inner shrink-0" style={{ backgroundColor: base.colorHex }} />
-                      {editingBaseId === base.id ? (
-                        <div className="flex-1 flex gap-2">
-                          <input
-                            type="text"
-                            value={baseDrafts[base.id]?.name ?? base.name}
-                            onChange={(e) => updateBaseDraft(base.id, { name: e.target.value })}
-                            className="flex-1 border border-[#519A66]/30 rounded-md px-2 py-1 text-sm font-bold focus:outline-none bg-white"
-                            placeholder="베이스명"
-                          />
-                          <button onClick={() => setEditingBaseId(null)} className="text-[#519A66]/50 hover:text-[#237227]"><Check className="w-4 h-4" /></button>
-                        </div>
-                      ) : (
-                        <div className="flex-1 flex items-center justify-between">
-                          <span className="font-bold text-[#237227]">{base.name}</span>
-                          <button onClick={() => setEditingBaseId(base.id)} className="text-[#519A66]/40 hover:text-[#237227] ml-2">
-                            <Edit2 className="w-3.5 h-3.5" />
-                          </button>
-                        </div>
-                      )}
+                      <input
+                        type="text"
+                        value={baseDrafts[base.id]?.name ?? base.name}
+                        onChange={(e) => updateBaseDraft(base.id, { name: e.target.value })}
+                        className="flex-1 border border-[#519A66]/30 rounded-md px-2 py-1.5 text-sm font-bold focus:outline-none bg-white text-[#237227]"
+                        placeholder="베이스명"
+                      />
                     </div>
                     
                     {/* Origin field (always separate) */}
