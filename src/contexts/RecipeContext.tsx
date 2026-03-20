@@ -12,7 +12,7 @@ export interface SavedRecipe extends ActiveRecipe {
 
 interface RecipeContextType {
   savedRecipes: SavedRecipe[];
-  saveRecipe: (name: string, recipe: ActiveRecipe, isOfficial?: boolean) => void;
+  saveRecipe: (name: string, recipe: ActiveRecipe, isOfficial?: boolean, existingId?: string) => string;
   deleteRecipe: (id: string) => void;
 }
 
@@ -54,18 +54,28 @@ export const RecipeProvider = ({ children }: { children: ReactNode }) => {
     }
   }, [savedRecipes]);
 
-  const saveRecipe = (name: string, recipe: ActiveRecipe, isOfficial: boolean = false) => {
+  const saveRecipe = (name: string, recipe: ActiveRecipe, isOfficial: boolean = false, existingId?: string) => {
+    const recordId = existingId ?? `recipe_${Date.now()}`;
+    const existingRecipe = existingId ? savedRecipes.find((savedRecipe) => savedRecipe.id === existingId) : null;
+
     const newRecord: SavedRecipe = {
       ...recipe,
       layerOrder: recipe.layerOrder ?? [],
       garnishOrder: recipe.garnishOrder ?? [],
-      id: `recipe_${Date.now()}`,
+      id: recordId,
       name: name || "My Custom Drink",
-      createdAt: new Date().toISOString(),
+      createdAt: existingRecipe?.createdAt ?? new Date().toISOString(),
       isOfficial,
     };
-    // Unshift to put newest recipes at the front
-    setSavedRecipes((prev) => [newRecord, ...prev]);
+
+    setSavedRecipes((prev) => {
+      if (existingId) {
+        return [newRecord, ...prev.filter((recipeItem) => recipeItem.id !== existingId)];
+      }
+      return [newRecord, ...prev];
+    });
+
+    return recordId;
   };
 
   const deleteRecipe = (id: string) => {

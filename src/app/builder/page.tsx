@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import IngredientPanel from "@/components/builder/IngredientPanel";
 import CupPreview from "@/components/builder/CupPreview";
@@ -12,8 +12,10 @@ import { Save, Sparkles } from "lucide-react";
 
 export default function BuilderPage() {
   const router = useRouter();
-  const { saveRecipe } = useRecipes();
-  const isOfficial = typeof window !== "undefined" ? new URLSearchParams(window.location.search).get("official") === "true" : false;
+  const { saveRecipe, savedRecipes } = useRecipes();
+  const searchParams = typeof window !== "undefined" ? new URLSearchParams(window.location.search) : null;
+  const isOfficial = searchParams?.get("official") === "true";
+  const editingRecipeId = searchParams?.get("edit");
   const [isSaving, setIsSaving] = useState(false);
   const [recipeName, setRecipeName] = useState("");
 
@@ -29,12 +31,42 @@ export default function BuilderPage() {
     garnishOrder: [],
   });
 
+  const editingRecipe = useMemo(
+    () => savedRecipes.find((savedRecipe) => savedRecipe.id === editingRecipeId),
+    [editingRecipeId, savedRecipes]
+  );
+
+  useEffect(() => {
+    if (!editingRecipe) {
+      return;
+    }
+
+    const frameId = window.requestAnimationFrame(() => {
+      setRecipe({
+        cupSizeMl: editingRecipe.cupSizeMl,
+        base: editingRecipe.base,
+        baseVolumeMl: editingRecipe.baseVolumeMl,
+        liquids: editingRecipe.liquids,
+        subIngredients: editingRecipe.subIngredients,
+        garnishes: editingRecipe.garnishes,
+        temperature: editingRecipe.temperature,
+        layerOrder: editingRecipe.layerOrder ?? [],
+        garnishOrder: editingRecipe.garnishOrder ?? [],
+      });
+      setRecipeName(editingRecipe.name);
+    });
+
+    return () => {
+      window.cancelAnimationFrame(frameId);
+    };
+  }, [editingRecipe]);
+
   const handleSave = () => {
     if (!recipe.base) {
       alert("베이스 재료를 먼저 선택해주세요.");
       return;
     }
-    saveRecipe(recipeName || `${recipe.base.name} Mix`, recipe, isOfficial);
+    saveRecipe(recipeName || `${recipe.base.name} Mix`, recipe, isOfficial, editingRecipeId ?? undefined);
     router.push(isOfficial ? "/slingshot" : "/gallery");
   };
 
@@ -48,7 +80,7 @@ export default function BuilderPage() {
         {isOfficial && (
           <div className="col-span-1 lg:col-span-2 bg-gradient-to-r from-[#237227] to-[#519A66] text-white p-4 rounded-2xl flex items-center justify-center gap-3 font-bold shadow-md">
             <Sparkles className="w-5 h-5 text-[#FFD786]" />
-            공식 슬링샷 레시피 작성 모드 — 저장 시 슬링샷 레시피에 등록됩니다.
+            {editingRecipeId ? "공식 슬링샷 레시피 수정 모드" : "공식 슬링샷 레시피 작성 모드"} — 저장 시 슬링샷 레시피에 등록됩니다.
           </div>
         )}
 

@@ -9,7 +9,9 @@ import { motion } from "framer-motion";
 
 export default function GalleryPage() {
   const { savedRecipes, deleteRecipe } = useRecipes();
-  const myRecipes = savedRecipes.filter((r) => !r.isOfficial);
+  const myRecipes = [...savedRecipes]
+    .filter((r) => !r.isOfficial)
+    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
   return (
     <div className="w-full min-h-screen bg-[#f5f9f5] flex flex-col items-center">

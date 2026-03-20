@@ -21,7 +21,7 @@ export default function SuperAdminPage() {
   const { appName, setAppName, logoUrl, setLogoUrl, trendDrinks, setTrendDrinks } = useAdmin();
   const { ingredients, updateIngredient, addIngredient } = useIngredients();
   const { getTodayCount, getTopPages } = useAnalytics();
-  const { savedRecipes } = useRecipes();
+  const { savedRecipes, deleteRecipe } = useRecipes();
   const { settings: pricing, updateSettings: updatePricing, setIngredientPrice, getIngredientPrice } = usePricing();
   
   const [localTitle, setLocalTitle] = useState(appName);
@@ -711,6 +711,56 @@ export default function SuperAdminPage() {
             >
               {priceSavedTick ? <><Check className="w-5 h-5" /> 저장됨</> : "가격 설정 저장"}
             </button>
+          </motion.section>
+
+          <motion.section initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.34 }} className="bg-white border border-[#519A66]/20 rounded-3xl p-6 shadow-sm mt-6">
+            <div className="flex items-center gap-3 mb-5">
+              <div className="p-2 bg-[#237227]/10 rounded-lg text-[#237227]"><BookOpen className="w-5 h-5" /></div>
+              <div>
+                <h2 className="text-lg font-bold text-[#237227]">전체 레시피 관리</h2>
+                <p className="text-xs text-[#519A66]/60">어드민 계정에서는 모든 저장 레시피를 수정하거나 삭제할 수 있습니다.</p>
+              </div>
+            </div>
+
+            <div className="space-y-3 max-h-[520px] overflow-y-auto pr-1">
+              {[...savedRecipes]
+                .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+                .map((recipe) => (
+                  <div key={recipe.id} className="rounded-2xl border border-[#519A66]/15 bg-[#f5f9f5] p-4">
+                    <div className="flex items-start justify-between gap-4">
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-2">
+                          <h3 className="font-black text-[#237227] truncate">{recipe.name}</h3>
+                          <span className={`text-[10px] font-black px-2 py-1 rounded-full ${recipe.isOfficial ? "bg-[#237227] text-white" : "bg-white text-[#519A66] border border-[#519A66]/20"}`}>
+                            {recipe.isOfficial ? "공식" : "커스텀"}
+                          </span>
+                        </div>
+                        <p className="text-xs text-[#519A66]/70 mt-1">
+                          {recipe.base?.name ?? "베이스 없음"} · {recipe.cupSizeMl}ml · {new Date(recipe.createdAt).toLocaleString("ko-KR")}
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-2 shrink-0">
+                        <Link
+                          href={`/builder?edit=${recipe.id}${recipe.isOfficial ? "&official=true" : ""}`}
+                          className="px-3 py-2 rounded-xl bg-white text-[#237227] font-bold text-xs border border-[#519A66]/20 hover:border-[#519A66]/40 transition-colors"
+                        >
+                          수정
+                        </Link>
+                        <button
+                          onClick={() => {
+                            if (confirm(`"${recipe.name}" 레시피를 삭제할까요?`)) {
+                              deleteRecipe(recipe.id);
+                            }
+                          }}
+                          className="px-3 py-2 rounded-xl bg-red-500 text-white font-bold text-xs hover:bg-red-600 transition-colors"
+                        >
+                          삭제
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+            </div>
           </motion.section>
 
         </main>

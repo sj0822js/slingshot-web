@@ -10,6 +10,18 @@ interface RecipeCardProps {
 
 export default function RecipeCard({ recipe }: RecipeCardProps) {
   const totalVolume = recipe.baseVolumeMl + recipe.liquids.reduce((acc, l) => acc + l.volumeMl, 0);
+  const detailSections = [
+    recipe.base ? { label: "Base", items: [`${recipe.base.name} ${recipe.baseVolumeMl}ml`] } : null,
+    recipe.liquids.length > 0
+      ? { label: "Liquids", items: recipe.liquids.map((liquidItem) => `${liquidItem.liquid.name} ${liquidItem.volumeMl}ml`) }
+      : null,
+    recipe.subIngredients.length > 0
+      ? { label: "Extras", items: recipe.subIngredients.map((subIngredient) => `${subIngredient.item.name} ${subIngredient.amountGs}g`) }
+      : null,
+    recipe.garnishes.length > 0
+      ? { label: "Garnish", items: recipe.garnishes.map((garnish) => `${garnish.item.name} ${garnish.amountGs}g`) }
+      : null,
+  ].filter(Boolean) as { label: string; items: string[] }[];
 
   return (
     <div className="bg-white border border-stone-200 rounded-3xl overflow-hidden hover:shadow-xl transition-all duration-300 group flex flex-col">
@@ -41,6 +53,21 @@ export default function RecipeCard({ recipe }: RecipeCardProps) {
         <div className="flex items-center gap-1.5 text-xs text-stone-400 font-mono mb-4">
           <Clock className="w-3.5 h-3.5" />
           {new Date(recipe.createdAt).toLocaleDateString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+        </div>
+
+        <div className="space-y-3 mb-4">
+          {detailSections.map((section) => (
+            <div key={section.label} className="rounded-2xl bg-stone-50 border border-stone-100 px-3 py-2.5">
+              <p className="text-[10px] font-black uppercase tracking-[0.24em] text-stone-400 mb-2">{section.label}</p>
+              <div className="space-y-1">
+                {section.items.map((item) => (
+                  <p key={item} className="text-xs font-semibold text-stone-600 leading-relaxed">
+                    {item}
+                  </p>
+                ))}
+              </div>
+            </div>
+          ))}
         </div>
         
         {/* Ingredient Tags */}

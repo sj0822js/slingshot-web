@@ -3,13 +3,14 @@
 import Header from "@/components/layout/Header";
 import { useRecipes } from "@/contexts/RecipeContext";
 import RecipeCard from "@/components/gallery/RecipeCard";
-import { Plus, Coffee } from "lucide-react";
-import Link from "next/link";
+import { Coffee } from "lucide-react";
 import { motion } from "framer-motion";
 
 export default function SlingshotGalleryPage() {
   const { savedRecipes } = useRecipes();
-  const officialRecipes = savedRecipes.filter(r => r.isOfficial);
+  const officialRecipes = [...savedRecipes]
+    .filter((recipe) => recipe.isOfficial)
+    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
   return (
     <div className="w-full min-h-screen bg-stone-50 flex flex-col items-center">
