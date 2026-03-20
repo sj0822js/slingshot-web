@@ -14,7 +14,7 @@ import {
 import { motion } from "framer-motion";
 import AdminGuard from "@/components/auth/AdminGuard";
 import Link from "next/link";
-import { useState, useEffect } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { IngredientPrice, usePricing } from "@/contexts/PricingContext";
 
 export default function SuperAdminPage() {
@@ -39,7 +39,10 @@ export default function SuperAdminPage() {
   }, [getTodayCount, getTopPages]);
 
   // Computed state
-  const bases = ingredients.filter((i) => i.category === "base") as DrinkBase[];
+  const bases = useMemo(
+    () => ingredients.filter((i) => i.category === "base") as DrinkBase[],
+    [ingredients]
+  );
   const [baseDrafts, setBaseDrafts] = useState<Record<string, DrinkBase>>({});
   const [pricingDraft, setPricingDraft] = useState(pricing);
   const [ingredientPriceDrafts, setIngredientPriceDrafts] = useState<Record<string, number>>({});
@@ -49,11 +52,11 @@ export default function SuperAdminPage() {
   }, [appName]);
 
   useEffect(() => {
-    setBaseDrafts(
+    setBaseDrafts((prev) =>
       Object.fromEntries(
         bases.map((base) => [
           base.id,
-          {
+          prev[base.id] ?? {
             ...base,
             dosingGrams: base.dosingGrams ?? 0,
             extractionGrams: base.extractionGrams ?? 0,
@@ -66,15 +69,39 @@ export default function SuperAdminPage() {
   }, [bases]);
 
   useEffect(() => {
-    setPricingDraft(pricing);
-    setIngredientPriceDrafts(
-      Object.fromEntries(
-        ingredients
-          .filter((ingredient) => ingredient.category !== "temperature")
-          .map((ingredient) => [ingredient.id, getIngredientPrice(ingredient.id)])
-      )
-    );
-  }, [pricing, ingredients, getIngredientPrice]);
+    setPricingDraft((prev) => {
+      if (
+        prev.baseFee === pricing.baseFee &&
+        prev.takeoutFee === pricing.takeoutFee &&
+        JSON.stringify(prev.cupSizeFees) === JSON.stringify(pricing.cupSizeFees) &&
+        JSON.stringify(prev.ingredientPrices) === JSON.stringify(pricing.ingredientPrices)
+      ) {
+        return prev;
+      }
+      return pricing;
+    });
+  }, [pricing]);
+
+  useEffect(() => {
+    setIngredientPriceDrafts((prev) => {
+      const next = { ...prev };
+      ingredients
+        .filter((ingredient) => ingredient.category !== "temperature")
+        .forEach((ingredient) => {
+          if (!(ingredient.id in next)) {
+            next[ingredient.id] = getIngredientPrice(ingredient.id);
+          }
+        });
+
+      Object.keys(next).forEach((ingredientId) => {
+        if (!ingredients.some((ingredient) => ingredient.id === ingredientId && ingredient.category !== "temperature")) {
+          delete next[ingredientId];
+        }
+      });
+
+      return next;
+    });
+  }, [ingredients, getIngredientPrice]);
 
   // Espresso editor states
   const [isAddingBase, setIsAddingBase] = useState(false);
