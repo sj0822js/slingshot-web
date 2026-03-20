@@ -2,6 +2,7 @@
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from "react";
 import { ActiveRecipe } from "@/types/ingredient";
+import { loadAppState, saveAppState } from "@/lib/appStateStore";
 
 export interface SavedRecipe extends ActiveRecipe {
   id: string;
@@ -45,14 +46,39 @@ const RecipeContext = createContext<RecipeContextType | undefined>(undefined);
 
 export const RecipeProvider = ({ children }: { children: ReactNode }) => {
   const [savedRecipes, setSavedRecipes] = useState<SavedRecipe[]>(loadSavedRecipes);
+  const [isLoaded, setIsLoaded] = useState(false);
 
   useEffect(() => {
+    let active = true;
+
+    loadAppState("recipes", STORAGE_KEY, [] as SavedRecipe[], {
+      legacyReader: loadSavedRecipes,
+    }).then((envelope) => {
+      if (!active) {
+        return;
+      }
+
+      setSavedRecipes(envelope.data.map(normalizeRecipe));
+      setIsLoaded(true);
+    });
+
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!isLoaded) {
+      return;
+    }
+
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(savedRecipes.map(normalizeRecipe)));
     } catch (e) {
       console.error("Failed to save recipes to localStorage", e);
     }
-  }, [savedRecipes]);
+    void saveAppState("recipes", STORAGE_KEY, savedRecipes.map(normalizeRecipe));
+  }, [savedRecipes, isLoaded]);
 
   const saveRecipe = (name: string, recipe: ActiveRecipe, isOfficial: boolean = false, existingId?: string) => {
     const recordId = existingId ?? `recipe_${Date.now()}`;

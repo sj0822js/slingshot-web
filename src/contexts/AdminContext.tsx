@@ -1,6 +1,7 @@
 "use client";
 
-import React, { createContext, useContext, useState } from "react";
+import React, { createContext, useContext, useEffect, useMemo, useState } from "react";
+import { loadAppState, saveAppState } from "@/lib/appStateStore";
 
 interface TrendDrink {
   id: string;
@@ -18,6 +19,7 @@ interface AdminContextType {
 }
 
 const AdminContext = createContext<AdminContextType | undefined>(undefined);
+const ADMIN_STORAGE_KEY = "slingshot_admin_state";
 
 const DEFAULT_TREND_DRINKS: TrendDrink[] = [
   { id: "td1", url: "/images/trend_drink_matcha_espresso.png", link: "#" },
@@ -56,25 +58,57 @@ const loadAdminState = () => {
 };
 
 export function AdminProvider({ children }: { children: React.ReactNode }) {
-  const initialState = loadAdminState();
+  const initialState = useMemo(() => loadAdminState(), []);
   const [appName, setAppNameState] = useState(initialState.appName);
   const [logoUrl, setLogoUrlState] = useState<string | null>(initialState.logoUrl);
   const [trendDrinks, setTrendDrinksState] = useState<TrendDrink[]>(initialState.trendDrinks);
+  const [isLoaded, setIsLoaded] = useState(false);
+
+  useEffect(() => {
+    let active = true;
+
+    loadAppState(
+      "admin",
+      ADMIN_STORAGE_KEY,
+      initialState
+    ).then((envelope) => {
+      if (!active) {
+        return;
+      }
+
+      setAppNameState(envelope.data.appName);
+      setLogoUrlState(envelope.data.logoUrl);
+      setTrendDrinksState(envelope.data.trendDrinks);
+      setIsLoaded(true);
+    });
+
+    return () => {
+      active = false;
+    };
+  }, [initialState]);
+
+  useEffect(() => {
+    if (!isLoaded) {
+      return;
+    }
+
+    void saveAppState("admin", ADMIN_STORAGE_KEY, {
+      appName,
+      logoUrl,
+      trendDrinks,
+    });
+  }, [appName, logoUrl, trendDrinks, isLoaded]);
 
   const setAppName = (name: string) => {
     setAppNameState(name);
-    localStorage.setItem("admin_appName", name);
   };
 
   const setLogoUrl = (url: string | null) => {
     setLogoUrlState(url);
-    if (url) localStorage.setItem("admin_logoUrl", url);
-    else localStorage.removeItem("admin_logoUrl");
   };
 
   const setTrendDrinks = (drinks: TrendDrink[]) => {
     setTrendDrinksState(drinks);
-    localStorage.setItem("admin_trendDrinks", JSON.stringify(drinks));
   };
 
   return (

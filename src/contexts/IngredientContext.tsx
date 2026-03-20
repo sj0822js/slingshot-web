@@ -3,6 +3,7 @@
 import React, { createContext, useContext, useEffect, useState, ReactNode } from "react";
 import { IngredientItem } from "@/types/ingredient";
 import { allMockIngredients } from "@/data/mockIngredients";
+import { loadAppState, saveAppState } from "@/lib/appStateStore";
 
 const INGREDIENTS_STORAGE_KEY = "slingshot_ingredients";
 const LEGACY_CUSTOM_INGREDIENTS_KEY = "slinshot_custom_ingredients";
@@ -47,14 +48,39 @@ const IngredientContext = createContext<IngredientContextType | undefined>(undef
 
 export const IngredientProvider = ({ children }: { children: ReactNode }) => {
   const [ingredients, setIngredients] = useState<IngredientItem[]>(loadIngredients);
+  const [isLoaded, setIsLoaded] = useState(false);
 
   useEffect(() => {
+    let active = true;
+
+    loadAppState("ingredients", INGREDIENTS_STORAGE_KEY, allMockIngredients, {
+      legacyReader: loadIngredients,
+    }).then((envelope) => {
+      if (!active) {
+        return;
+      }
+
+      setIngredients(mergeIngredients(envelope.data));
+      setIsLoaded(true);
+    });
+
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!isLoaded) {
+      return;
+    }
+
     localStorage.setItem(INGREDIENTS_STORAGE_KEY, JSON.stringify(ingredients));
 
     const mockIds = new Set(allMockIngredients.map((item) => item.id));
     const customOnly = ingredients.filter((item) => !mockIds.has(item.id));
     localStorage.setItem(LEGACY_CUSTOM_INGREDIENTS_KEY, JSON.stringify(customOnly));
-  }, [ingredients]);
+    void saveAppState("ingredients", INGREDIENTS_STORAGE_KEY, ingredients);
+  }, [ingredients, isLoaded]);
 
   const addIngredient = (item: IngredientItem) => {
     setIngredients((prev) => [...prev, item]);

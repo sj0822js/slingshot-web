@@ -1,6 +1,7 @@
 "use client";
 
 import React, { createContext, useContext, useState, useEffect } from "react";
+import { loadAppState, saveAppState } from "@/lib/appStateStore";
 
 // Per-ingredient price in KRW
 // For liquids/bases: per ml, for sub-ingredients/garnishes: per gram
@@ -66,10 +67,43 @@ const PricingContext = createContext<PricingContextType | undefined>(undefined);
 
 export function PricingProvider({ children }: { children: React.ReactNode }) {
   const [settings, setSettings] = useState<PricingSettings>(loadPricingSettings);
+  const [isLoaded, setIsLoaded] = useState(false);
 
   useEffect(() => {
+    let active = true;
+
+    loadAppState("pricing", STORAGE_KEY, DEFAULT_SETTINGS, {
+      legacyReader: loadPricingSettings,
+    }).then((envelope) => {
+      if (!active) {
+        return;
+      }
+
+      setSettings({
+        ...DEFAULT_SETTINGS,
+        ...envelope.data,
+        cupSizeFees: {
+          ...DEFAULT_SETTINGS.cupSizeFees,
+          ...(envelope.data.cupSizeFees ?? {}),
+        },
+        ingredientPrices: envelope.data.ingredientPrices ?? [],
+      });
+      setIsLoaded(true);
+    });
+
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!isLoaded) {
+      return;
+    }
+
     localStorage.setItem(STORAGE_KEY, JSON.stringify(settings));
-  }, [settings]);
+    void saveAppState("pricing", STORAGE_KEY, settings);
+  }, [settings, isLoaded]);
 
   const updateSettings = (updates: Partial<PricingSettings>) => {
     setSettings((prev) => ({ ...prev, ...updates }));
