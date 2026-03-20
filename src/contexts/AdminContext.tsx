@@ -37,10 +37,20 @@ const loadAdminState = () => {
     };
   }
 
-  const savedName = localStorage.getItem("admin_appName") || "SLINSHOT : FILL YOUR DAY";
-  const savedLogo = localStorage.getItem("admin_logoUrl");
-
   try {
+    const latestSnapshot = localStorage.getItem(ADMIN_STORAGE_KEY);
+    if (latestSnapshot) {
+      const parsed = JSON.parse(latestSnapshot) as {
+        data?: { appName: string; logoUrl: string | null; trendDrinks: TrendDrink[] };
+      };
+
+      if (parsed.data) {
+        return parsed.data;
+      }
+    }
+
+    const savedName = localStorage.getItem("admin_appName") || "SLINSHOT : FILL YOUR DAY";
+    const savedLogo = localStorage.getItem("admin_logoUrl");
     const savedTrends = localStorage.getItem("admin_trendDrinks");
     const parsedTrends = savedTrends ? (JSON.parse(savedTrends) as TrendDrink[]) : [];
     return {
@@ -49,6 +59,8 @@ const loadAdminState = () => {
       trendDrinks: parsedTrends.length > 0 ? parsedTrends : DEFAULT_TREND_DRINKS,
     };
   } catch {
+    const savedName = localStorage.getItem("admin_appName") || "SLINSHOT : FILL YOUR DAY";
+    const savedLogo = localStorage.getItem("admin_logoUrl");
     return {
       appName: savedName,
       logoUrl: savedLogo,

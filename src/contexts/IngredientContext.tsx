@@ -23,7 +23,8 @@ const loadIngredients = () => {
   try {
     const fullSnapshot = localStorage.getItem(INGREDIENTS_STORAGE_KEY);
     if (fullSnapshot) {
-      return mergeIngredients(JSON.parse(fullSnapshot) as IngredientItem[]);
+      const parsed = JSON.parse(fullSnapshot) as IngredientItem[] | { data?: IngredientItem[] };
+      return mergeIngredients(Array.isArray(parsed) ? parsed : parsed.data ?? []);
     }
 
     const legacyCustom = localStorage.getItem(LEGACY_CUSTOM_INGREDIENTS_KEY);
@@ -74,8 +75,6 @@ export const IngredientProvider = ({ children }: { children: ReactNode }) => {
       return;
     }
 
-    localStorage.setItem(INGREDIENTS_STORAGE_KEY, JSON.stringify(ingredients));
-
     const mockIds = new Set(allMockIngredients.map((item) => item.id));
     const customOnly = ingredients.filter((item) => !mockIds.has(item.id));
     localStorage.setItem(LEGACY_CUSTOM_INGREDIENTS_KEY, JSON.stringify(customOnly));
@@ -83,7 +82,12 @@ export const IngredientProvider = ({ children }: { children: ReactNode }) => {
   }, [ingredients, isLoaded]);
 
   const addIngredient = (item: IngredientItem) => {
-    setIngredients((prev) => [...prev, item]);
+    setIngredients((prev) => {
+      if (prev.some((existing) => existing.id === item.id)) {
+        return prev.map((existing) => (existing.id === item.id ? item : existing));
+      }
+      return [...prev, item];
+    });
   };
 
   const removeIngredient = (id: string) => {

@@ -33,7 +33,9 @@ const loadSavedRecipes = () => {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (raw) {
-      return (JSON.parse(raw) as SavedRecipe[]).map(normalizeRecipe);
+      const parsed = JSON.parse(raw) as SavedRecipe[] | { data?: SavedRecipe[] };
+      const latest = Array.isArray(parsed) ? parsed : parsed.data ?? [];
+      return latest.map(normalizeRecipe);
     }
   } catch (e) {
     console.error("Failed to load saved recipes", e);
@@ -70,12 +72,6 @@ export const RecipeProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     if (!isLoaded) {
       return;
-    }
-
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(savedRecipes.map(normalizeRecipe)));
-    } catch (e) {
-      console.error("Failed to save recipes to localStorage", e);
     }
     void saveAppState("recipes", STORAGE_KEY, savedRecipes.map(normalizeRecipe));
   }, [savedRecipes, isLoaded]);

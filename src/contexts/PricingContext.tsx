@@ -48,15 +48,22 @@ const loadPricingSettings = (): PricingSettings => {
       return DEFAULT_SETTINGS;
     }
 
-    const parsed = JSON.parse(raw) as Partial<PricingSettings>;
+    const parsed = JSON.parse(raw) as unknown;
+    const latest =
+      parsed &&
+      typeof parsed === "object" &&
+      "data" in parsed &&
+      (parsed as { data?: Partial<PricingSettings> }).data
+        ? (parsed as { data: Partial<PricingSettings> }).data
+        : (parsed as Partial<PricingSettings>);
     return {
       ...DEFAULT_SETTINGS,
-      ...parsed,
+      ...latest,
       cupSizeFees: {
         ...DEFAULT_SETTINGS.cupSizeFees,
-        ...(parsed.cupSizeFees ?? {}),
+        ...(latest.cupSizeFees ?? {}),
       },
-      ingredientPrices: parsed.ingredientPrices ?? [],
+      ingredientPrices: latest.ingredientPrices ?? [],
     };
   } catch {
     return DEFAULT_SETTINGS;
@@ -100,8 +107,6 @@ export function PricingProvider({ children }: { children: React.ReactNode }) {
     if (!isLoaded) {
       return;
     }
-
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(settings));
     void saveAppState("pricing", STORAGE_KEY, settings);
   }, [settings, isLoaded]);
 
