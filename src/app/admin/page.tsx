@@ -9,7 +9,7 @@ import { DrinkBase } from "@/types/ingredient";
 import {
   Upload, Sparkles, LayoutPanelTop, MonitorSmartphone, Image as ImageIcon,
   Users, MousePointerClick, Coffee, Settings2, Link as LinkIcon, PlusCircle,
-  Check, Droplet, Timer, ThermometerSun, Plus, X, BookOpen, Receipt,
+  Check, Droplet, Timer, ThermometerSun, Plus, X, BookOpen, Receipt, Trash2,
 } from "lucide-react";
 import { motion } from "framer-motion";
 import AdminGuard from "@/components/auth/AdminGuard";
@@ -19,7 +19,7 @@ import { IngredientPrice, usePricing } from "@/contexts/PricingContext";
 
 export default function SuperAdminPage() {
   const { appName, setAppName, logoUrl, setLogoUrl, trendDrinks, setTrendDrinks } = useAdmin();
-  const { ingredients, updateIngredient, addIngredient } = useIngredients();
+  const { ingredients, updateIngredient, addIngredient, removeIngredient } = useIngredients();
   const { getTodayCount, getTopPages } = useAnalytics();
   const { savedRecipes, deleteRecipe } = useRecipes();
   const { settings: pricing, updateSettings: updatePricing, setIngredientPrice, getIngredientPrice } = usePricing();
@@ -259,6 +259,20 @@ export default function SuperAdminPage() {
 
     setPriceSavedTick(true);
     setTimeout(() => setPriceSavedTick(false), 2000);
+  };
+
+  const handleDeleteIngredient = (ingredientId: string, ingredientName: string) => {
+    if (!confirm(`"${ingredientName}" 재료를 삭제할까요?`)) {
+      return;
+    }
+
+    removeIngredient(ingredientId);
+    setIngredientPrice(ingredientId, 0);
+    setIngredientPriceDrafts((prev) => {
+      const next = { ...prev };
+      delete next[ingredientId];
+      return next;
+    });
   };
 
   const handleSaveGlobal = () => {
@@ -702,6 +716,13 @@ export default function SuperAdminPage() {
                     onChange={(e) => setIngredientPriceDrafts((prev) => ({ ...prev, [ing.id]: Number(e.target.value) }))}
                     className="w-20 border border-[#519A66]/20 rounded-md px-2 py-1 text-xs bg-white focus:outline-none text-right"
                   />
+                  <button
+                    onClick={() => handleDeleteIngredient(ing.id, ing.name)}
+                    className="w-8 h-8 rounded-lg bg-white text-red-500 border border-red-100 hover:bg-red-50 hover:border-red-200 transition-colors flex items-center justify-center shrink-0"
+                    title="재료 삭제"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </button>
                 </div>
               ))}
             </div>
