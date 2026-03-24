@@ -41,7 +41,8 @@ export default function IngredientPanel({ recipe, setRecipe }: IngredientPanelPr
   const currentIceVol = recipe.temperature ? recipe.cupSizeMl * (recipe.temperature.level / 100) * (1 / 3) : 0;
   const liquidVol = recipe.liquids.reduce((sum, l) => sum + l.volumeMl, 0);
   const syrupVol = recipe.subIngredients.reduce((sum, s) => sum + s.amountGs, 0);
-  const totalCurrentVolume = currentIceVol + recipe.baseVolumeMl + liquidVol + syrupVol;
+  const garnishVol = recipe.garnishes.reduce((sum, garnish) => sum + garnish.amountGs, 0);
+  const totalCurrentVolume = currentIceVol + recipe.baseVolumeMl + liquidVol + syrupVol + garnishVol;
   const remainingCapacity = Math.max(0, recipe.cupSizeMl - totalCurrentVolume);
 
   // Helpers
