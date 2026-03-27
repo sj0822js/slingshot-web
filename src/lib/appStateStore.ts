@@ -14,9 +14,10 @@ type RemoteRow<T> = {
 };
 
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const SUPABASE_ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+const SUPABASE_PUBLIC_KEY =
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
 
-const isRemoteEnabled = Boolean(SUPABASE_URL && SUPABASE_ANON_KEY);
+const isRemoteEnabled = Boolean(SUPABASE_URL && SUPABASE_PUBLIC_KEY);
 
 const getLocalEnvelope = <T>(storageKey: string, legacyReader?: () => T): PersistEnvelope<T> | null => {
   try {
@@ -60,11 +61,11 @@ const fetchRemoteEnvelope = async <T>(key: StateKey): Promise<PersistEnvelope<T>
   }
 
   const response = await fetch(
-    `${SUPABASE_URL}/rest/v1/app_state?key=eq.${key}&select=key,value,updated_at`,
+        `${SUPABASE_URL}/rest/v1/app_state?key=eq.${key}&select=key,value,updated_at`,
     {
       headers: {
-        apikey: SUPABASE_ANON_KEY!,
-        Authorization: `Bearer ${SUPABASE_ANON_KEY!}`,
+        apikey: SUPABASE_PUBLIC_KEY!,
+        Authorization: `Bearer ${SUPABASE_PUBLIC_KEY!}`,
       },
       cache: "no-store",
     }
@@ -95,8 +96,8 @@ const pushRemoteEnvelope = async <T>(key: StateKey, envelope: PersistEnvelope<T>
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      apikey: SUPABASE_ANON_KEY!,
-      Authorization: `Bearer ${SUPABASE_ANON_KEY!}`,
+      apikey: SUPABASE_PUBLIC_KEY!,
+      Authorization: `Bearer ${SUPABASE_PUBLIC_KEY!}`,
       Prefer: "resolution=merge-duplicates,return=minimal",
     },
     body: JSON.stringify([
