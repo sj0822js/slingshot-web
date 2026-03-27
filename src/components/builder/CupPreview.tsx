@@ -1,5 +1,6 @@
 "use client";
 
+import { useId } from "react";
 import { ActiveRecipe } from "@/types/ingredient";
 import * as LucideIcons from "lucide-react";
 import { Reorder } from "framer-motion";
@@ -10,6 +11,7 @@ interface CupPreviewProps {
 }
 
 export default function CupPreview({ recipe, setRecipe }: CupPreviewProps) {
+  const svgIdPrefix = useId().replace(/:/g, "-");
   const CUP_WIDTH_PX = 200;
   const CUP_HEIGHT_PX = 400;
   const cupPath = `M 0 0 L 20 400 L 180 400 L 200 0 Z`;
@@ -132,14 +134,15 @@ export default function CupPreview({ recipe, setRecipe }: CupPreviewProps) {
             {layers.map((layer, index) => {
               if (index === 0) return null;
               const layerBelow = layers[index - 1];
+              const gradientId = `${svgIdPrefix}-grad-${layer.id}`;
               return (
-                <linearGradient key={`grad-${layer.id}`} id={`grad-${layer.id}`} x1="0" y1="0" x2="0" y2="1">
+                <linearGradient key={gradientId} id={gradientId} x1="0" y1="0" x2="0" y2="1">
                   <stop offset="0%" stopColor={layer.color} stopOpacity="0.9" />
                   <stop offset="100%" stopColor={layerBelow.color} stopOpacity="0.8" />
                 </linearGradient>
               );
             })}
-            <linearGradient id="glassShine" x1="0" y1="0" x2="1" y2="0">
+            <linearGradient id={`${svgIdPrefix}-glassShine`} x1="0" y1="0" x2="1" y2="0">
               <stop offset="0%" stopColor="white" stopOpacity="0.6" />
               <stop offset="15%" stopColor="white" stopOpacity="0.1" />
               <stop offset="85%" stopColor="transparent" stopOpacity="0" />
@@ -147,25 +150,25 @@ export default function CupPreview({ recipe, setRecipe }: CupPreviewProps) {
             </linearGradient>
 
             {/* ── Ice Cube Gradients ── */}
-            <linearGradient id="iceBody" x1="0" y1="0" x2="0.6" y2="1">
+            <linearGradient id={`${svgIdPrefix}-iceBody`} x1="0" y1="0" x2="0.6" y2="1">
               <stop offset="0%"   stopColor="#e8f4ff" stopOpacity="0.28" />
               <stop offset="40%"  stopColor="#d0e8f8" stopOpacity="0.18" />
               <stop offset="100%" stopColor="#b8d8f0" stopOpacity="0.06" />
             </linearGradient>
-            <linearGradient id="iceHighlight" x1="0" y1="0" x2="1" y2="0.3">
+            <linearGradient id={`${svgIdPrefix}-iceHighlight`} x1="0" y1="0" x2="1" y2="0.3">
               <stop offset="0%"   stopColor="#ffffff" stopOpacity="0.40" />
               <stop offset="30%"  stopColor="#ffffff" stopOpacity="0.10" />
               <stop offset="100%" stopColor="#ffffff" stopOpacity="0.00" />
             </linearGradient>
-            <linearGradient id="iceShadow" x1="0.5" y1="1" x2="0.5" y2="0">
+            <linearGradient id={`${svgIdPrefix}-iceShadow`} x1="0.5" y1="1" x2="0.5" y2="0">
               <stop offset="0%"   stopColor="#90b8d8" stopOpacity="0.12" />
               <stop offset="100%" stopColor="#90b8d8" stopOpacity="0.00" />
             </linearGradient>
-            <radialGradient id="iceRefraction" cx="0.3" cy="0.3" r="0.7">
+            <radialGradient id={`${svgIdPrefix}-iceRefraction`} cx="0.3" cy="0.3" r="0.7">
               <stop offset="0%"   stopColor="#ffffff" stopOpacity="0.20" />
               <stop offset="100%" stopColor="#cde4f4" stopOpacity="0.00" />
             </radialGradient>
-            <filter id="iceGlow">
+            <filter id={`${svgIdPrefix}-iceGlow`}>
               <feDropShadow dx="0" dy="0.8" stdDeviation="1.2" floodOpacity="0.12" floodColor="#c8e4ff" />
               <feDropShadow dx="-0.5" dy="-0.5" stdDeviation="0.5" floodOpacity="0.08" floodColor="#ffffff" />
             </filter>
@@ -176,12 +179,12 @@ export default function CupPreview({ recipe, setRecipe }: CupPreviewProps) {
             <path d={cupPath} fill="rgba(255, 255, 255, 0.4)" stroke="#d6d3d1" strokeWidth="3.5" strokeLinejoin="round" />
 
             <g style={{ transition: 'all 0.5s ease-out' }}>
-              <clipPath id="cupBounds"><path d={cupPath} /></clipPath>
+              <clipPath id={`${svgIdPrefix}-cupBounds`}><path d={cupPath} /></clipPath>
 
-              <g clipPath="url(#cupBounds)">
+              <g clipPath={`url(#${svgIdPrefix}-cupBounds)`}>
                 {/* Render Liquid Layers — fill from bottom, ice permeates */}
                 {layers.map((layer, i) => {
-                  const fillToUse = i === 0 ? layer.color : `url(#grad-${layer.id})`;
+                  const fillToUse = i === 0 ? layer.color : `url(#${svgIdPrefix}-grad-${layer.id})`;
                   return (
                     <rect 
                       key={`rect-${layer.id}`}
@@ -239,11 +242,11 @@ export default function CupPreview({ recipe, setRecipe }: CupPreviewProps) {
                         const r = Math.max(4, w * 0.15);
                         const inset = 2;
                         return (
-                          <g key={`ice-${k}`} transform={`rotate(${rot.toFixed(1)},${cx.toFixed(1)},${cy.toFixed(1)})`} filter="url(#iceGlow)">
-                            <rect x={x} y={y} width={w} height={h} rx={r} fill="url(#iceBody)" />
-                            <rect x={x} y={y} width={w} height={h} rx={r} fill="url(#iceShadow)" />
-                            <rect x={x} y={y} width={w} height={h} rx={r} fill="url(#iceRefraction)" />
-                            <rect x={x + inset} y={y + inset} width={w * 0.4} height={h * 0.35} rx={r * 0.8} fill="url(#iceHighlight)" />
+                          <g key={`ice-${k}`} transform={`rotate(${rot.toFixed(1)},${cx.toFixed(1)},${cy.toFixed(1)})`} filter={`url(#${svgIdPrefix}-iceGlow)`}>
+                            <rect x={x} y={y} width={w} height={h} rx={r} fill={`url(#${svgIdPrefix}-iceBody)`} />
+                            <rect x={x} y={y} width={w} height={h} rx={r} fill={`url(#${svgIdPrefix}-iceShadow)`} />
+                            <rect x={x} y={y} width={w} height={h} rx={r} fill={`url(#${svgIdPrefix}-iceRefraction)`} />
+                            <rect x={x + inset} y={y + inset} width={w * 0.4} height={h * 0.35} rx={r * 0.8} fill={`url(#${svgIdPrefix}-iceHighlight)`} />
                             <rect x={x + r} y={y + 1.5} width={w - r * 2} height={Math.max(2, h * 0.06)} rx={1} fill="white" fillOpacity={0.30} />
                             {w > 26 && (
                               <>
