@@ -27,7 +27,7 @@ export default function RecipeCard({ recipe }: RecipeCardProps) {
   return (
     <div className="bg-white border border-stone-200 rounded-3xl overflow-hidden hover:shadow-xl transition-all duration-300 group flex flex-col">
       {/* Thumbnail Area - We reuse the CupPreview but scale it down to fit a card */}
-      <div className="h-64 bg-stone-50 relative flex items-center justify-center overflow-hidden border-b border-stone-100">
+      <div className="h-[21rem] sm:h-[23rem] bg-stone-50 relative flex items-center justify-center overflow-hidden border-b border-stone-100">
         
         <div className="absolute inset-0 opacity-[0.02] pointer-events-none" style={{ backgroundImage: 'linear-gradient(to right, #000 1px, transparent 1px), linear-gradient(to bottom, #000 1px, transparent 1px)', backgroundSize: '10px 10px' }} />
 
@@ -35,7 +35,7 @@ export default function RecipeCard({ recipe }: RecipeCardProps) {
           Apply scale via CSS Transform to shrink the 500px interactive SVG canvas 
           into a thumbnail size without needing to rebuild components!
         */}
-        <div className="transform scale-[0.55] origin-center -translate-y-8 flex items-center justify-center w-[400px] h-[400px]">
+        <div className="transform scale-[0.62] sm:scale-[0.68] origin-center translate-y-2 sm:translate-y-3 flex items-center justify-center w-[400px] h-[400px]">
           <CupPreview recipe={recipe} />
         </div>
 
