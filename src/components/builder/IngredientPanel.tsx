@@ -41,8 +41,7 @@ export default function IngredientPanel({ recipe, setRecipe }: IngredientPanelPr
   const currentIceVol = recipe.temperature ? recipe.cupSizeMl * (recipe.temperature.level / 100) * (1 / 3) : 0;
   const liquidVol = recipe.liquids.reduce((sum, l) => sum + l.volumeMl, 0);
   const syrupVol = recipe.subIngredients.reduce((sum, s) => sum + s.amountGs, 0);
-  const garnishVol = recipe.garnishes.reduce((sum, garnish) => sum + garnish.amountGs, 0);
-  const totalCurrentVolume = currentIceVol + recipe.baseVolumeMl + liquidVol + syrupVol + garnishVol;
+  const totalCurrentVolume = currentIceVol + recipe.baseVolumeMl + liquidVol + syrupVol;
   const remainingCapacity = Math.max(0, recipe.cupSizeMl - totalCurrentVolume);
 
   // Helpers
@@ -121,7 +120,7 @@ export default function IngredientPanel({ recipe, setRecipe }: IngredientPanelPr
       }
       return {
         ...prev,
-        garnishes: [...prev.garnishes, { item: garnishItem, amountGs: 10 }],
+        garnishes: [...prev.garnishes, { item: garnishItem, amountGs: 1 }],
         garnishOrder: [...prev.garnishOrder, garnishItem.id],
       };
     });
@@ -426,7 +425,7 @@ export default function IngredientPanel({ recipe, setRecipe }: IngredientPanelPr
                   <span className="text-stone-800 bg-stone-200 px-2 rounded-md">{g.amountGs}g</span>
                 </div>
                 <input
-                  type="range" min="0" max="80" step="5" value={g.amountGs}
+                  type="range" min="0" max="80" step="1" value={g.amountGs}
                   onChange={(e) => updateGarnishAmount(g.item.id, parseInt(e.target.value))}
                   className="w-full h-1.5 bg-stone-200 rounded-lg appearance-none cursor-pointer accent-stone-800"
                 />

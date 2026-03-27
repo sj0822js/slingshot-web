@@ -71,9 +71,8 @@ export default function CupPreview({ recipe, setRecipe }: CupPreviewProps) {
   // Each layer is proportionally scaled within this visual fill height.
   // If no liquid, just ice cubes are shown (no liquid rectangles).
 
-  const garnishVolumeMl = recipe.garnishes.reduce((acc, garnish) => acc + garnish.amountGs, 0);
   const totalLiquidMl = pool.reduce((acc, l) => acc + l.heightMl, 0);
-  const totalOccupiedMl = totalLiquidMl + garnishVolumeMl + displacedIceVolumeMl;
+  const totalOccupiedMl = totalLiquidMl + displacedIceVolumeMl;
   const fillPercentage = Math.min((totalOccupiedMl / MAX_CAPACITY_ML) * 100, 100);
 
   // The visual height the liquid reaches in the cup (including ice displacement boost)
