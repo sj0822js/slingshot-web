@@ -16,7 +16,7 @@ import AdminGuard from "@/components/auth/AdminGuard";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { IngredientPrice, usePricing } from "@/contexts/PricingContext";
-import { isRemoteStateEnabled, RemoteStateCheckResult, verifyRemoteState } from "@/lib/appStateStore";
+import { RemoteStateCheckResult, verifyRemoteState } from "@/lib/appStateStore";
 
 export default function SuperAdminPage() {
   const { appName, setAppName, logoUrl, setLogoUrl, trendDrinks, setTrendDrinks } = useAdmin();
@@ -337,11 +337,11 @@ export default function SuperAdminPage() {
               <div>
                 <p className="text-xs font-bold text-[#519A66] uppercase tracking-widest mb-2">데이터 저장 상태</p>
                 <div className="flex items-center gap-2 mb-2">
-                  <span className={`inline-flex h-2.5 w-2.5 rounded-full ${remoteStatus?.ok ? "bg-green-500" : isRemoteStateEnabled() ? "bg-amber-500" : "bg-zinc-400"}`} />
+                  <span className={`inline-flex h-2.5 w-2.5 rounded-full ${remoteStatus?.ok ? "bg-green-500" : remoteStatus?.enabled ? "bg-amber-500" : "bg-zinc-400"}`} />
                   <p className="text-sm font-bold text-[#237227]">
                     {remoteStatus?.ok
                       ? "Supabase 원격 저장 사용 중"
-                      : isRemoteStateEnabled()
+                      : remoteStatus?.enabled
                         ? "Supabase 연결 확인 필요"
                         : "로컬 브라우저 저장만 사용 중"}
                   </p>
