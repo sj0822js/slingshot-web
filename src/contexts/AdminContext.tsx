@@ -79,11 +79,13 @@ export function AdminProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     let active = true;
 
-    loadAppState(
-      "admin",
-      ADMIN_STORAGE_KEY,
-      initialState
-    ).then((envelope) => {
+    const syncAdminState = async () => {
+      const envelope = await loadAppState(
+        "admin",
+        ADMIN_STORAGE_KEY,
+        initialState
+      );
+
       if (!active) {
         return;
       }
@@ -92,10 +94,33 @@ export function AdminProvider({ children }: { children: React.ReactNode }) {
       setLogoUrlState(envelope.data.logoUrl);
       setTrendDrinksState(envelope.data.trendDrinks);
       setIsLoaded(true);
-    });
+    };
+
+    void syncAdminState();
+
+    const handleWindowFocus = () => {
+      if (!active) {
+        return;
+      }
+
+      void syncAdminState();
+    };
+
+    const handleVisibilityChange = () => {
+      if (!active || document.visibilityState !== "visible") {
+        return;
+      }
+
+      void syncAdminState();
+    };
+
+    window.addEventListener("focus", handleWindowFocus);
+    document.addEventListener("visibilitychange", handleVisibilityChange);
 
     return () => {
       active = false;
+      window.removeEventListener("focus", handleWindowFocus);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
     };
   }, [initialState]);
 

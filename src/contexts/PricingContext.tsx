@@ -79,9 +79,11 @@ export function PricingProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     let active = true;
 
-    loadAppState("pricing", STORAGE_KEY, DEFAULT_SETTINGS, {
-      legacyReader: loadPricingSettings,
-    }).then((envelope) => {
+    const syncPricing = async () => {
+      const envelope = await loadAppState("pricing", STORAGE_KEY, DEFAULT_SETTINGS, {
+        legacyReader: loadPricingSettings,
+      });
+
       if (!active) {
         return;
       }
@@ -96,10 +98,33 @@ export function PricingProvider({ children }: { children: React.ReactNode }) {
         ingredientPrices: envelope.data.ingredientPrices ?? [],
       });
       setIsLoaded(true);
-    });
+    };
+
+    void syncPricing();
+
+    const handleWindowFocus = () => {
+      if (!active) {
+        return;
+      }
+
+      void syncPricing();
+    };
+
+    const handleVisibilityChange = () => {
+      if (!active || document.visibilityState !== "visible") {
+        return;
+      }
+
+      void syncPricing();
+    };
+
+    window.addEventListener("focus", handleWindowFocus);
+    document.addEventListener("visibilitychange", handleVisibilityChange);
 
     return () => {
       active = false;
+      window.removeEventListener("focus", handleWindowFocus);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
     };
   }, []);
 

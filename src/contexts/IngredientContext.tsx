@@ -54,19 +54,44 @@ export const IngredientProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     let active = true;
 
-    loadAppState("ingredients", INGREDIENTS_STORAGE_KEY, allMockIngredients, {
-      legacyReader: loadIngredients,
-    }).then((envelope) => {
+    const syncIngredients = async () => {
+      const envelope = await loadAppState("ingredients", INGREDIENTS_STORAGE_KEY, allMockIngredients, {
+        legacyReader: loadIngredients,
+      });
+
       if (!active) {
         return;
       }
 
       setIngredients(mergeIngredients(envelope.data));
       setIsLoaded(true);
-    });
+    };
+
+    void syncIngredients();
+
+    const handleWindowFocus = () => {
+      if (!active) {
+        return;
+      }
+
+      void syncIngredients();
+    };
+
+    const handleVisibilityChange = () => {
+      if (!active || document.visibilityState !== "visible") {
+        return;
+      }
+
+      void syncIngredients();
+    };
+
+    window.addEventListener("focus", handleWindowFocus);
+    document.addEventListener("visibilitychange", handleVisibilityChange);
 
     return () => {
       active = false;
+      window.removeEventListener("focus", handleWindowFocus);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
     };
   }, []);
 

@@ -53,19 +53,44 @@ export const RecipeProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     let active = true;
 
-    loadAppState("recipes", STORAGE_KEY, [] as SavedRecipe[], {
-      legacyReader: loadSavedRecipes,
-    }).then((envelope) => {
+    const syncRecipes = async () => {
+      const envelope = await loadAppState("recipes", STORAGE_KEY, [] as SavedRecipe[], {
+        legacyReader: loadSavedRecipes,
+      });
+
       if (!active) {
         return;
       }
 
       setSavedRecipes(envelope.data.map(normalizeRecipe));
       setIsLoaded(true);
-    });
+    };
+
+    void syncRecipes();
+
+    const handleWindowFocus = () => {
+      if (!active) {
+        return;
+      }
+
+      void syncRecipes();
+    };
+
+    const handleVisibilityChange = () => {
+      if (!active || document.visibilityState !== "visible") {
+        return;
+      }
+
+      void syncRecipes();
+    };
+
+    window.addEventListener("focus", handleWindowFocus);
+    document.addEventListener("visibilitychange", handleVisibilityChange);
 
     return () => {
       active = false;
+      window.removeEventListener("focus", handleWindowFocus);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
     };
   }, []);
 
