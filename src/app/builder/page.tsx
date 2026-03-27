@@ -29,6 +29,7 @@ export default function BuilderPage() {
     temperature: null,
     layerOrder: [],
     garnishOrder: [],
+    notes: "",
   });
 
   const editingRecipe = useMemo(
@@ -52,6 +53,7 @@ export default function BuilderPage() {
         temperature: editingRecipe.temperature,
         layerOrder: editingRecipe.layerOrder ?? [],
         garnishOrder: editingRecipe.garnishOrder ?? [],
+        notes: editingRecipe.notes ?? "",
       });
       setRecipeName(editingRecipe.name);
     });
@@ -128,6 +130,13 @@ export default function BuilderPage() {
                     value={recipeName}
                     onChange={(e) => setRecipeName(e.target.value)}
                     className="w-full border border-[#519A66]/20 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-[#519A66]/30 focus:border-[#519A66] mb-6 text-[#237227] font-bold"
+                  />
+                  <textarea
+                    placeholder="구현이 어려운 디테일이나 제조 메모를 적어주세요"
+                    value={recipe.notes}
+                    onChange={(e) => setRecipe((prev) => ({ ...prev, notes: e.target.value }))}
+                    rows={5}
+                    className="w-full border border-[#519A66]/20 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-[#519A66]/30 focus:border-[#519A66] mb-6 text-[#237227] text-sm resize-none"
                   />
                   <div className="flex gap-3">
                     <button 

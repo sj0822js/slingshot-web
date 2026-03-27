@@ -56,6 +56,14 @@ export default function RecipeCard({ recipe }: RecipeCardProps) {
         </div>
 
         <div className="space-y-3 mb-4">
+          {recipe.notes.trim().length > 0 && (
+            <div className="rounded-2xl bg-[#eef6ee] border border-[#519A66]/15 px-3 py-3">
+              <p className="text-[10px] font-black uppercase tracking-[0.24em] text-[#519A66]/70 mb-2">Notes</p>
+              <p className="text-xs font-medium text-[#2f4f32] leading-relaxed whitespace-pre-line">
+                {recipe.notes}
+              </p>
+            </div>
+          )}
           {detailSections.map((section) => (
             <div key={section.label} className="rounded-2xl bg-stone-50 border border-stone-100 px-3 py-2.5">
               <p className="text-[10px] font-black uppercase tracking-[0.24em] text-stone-400 mb-2">{section.label}</p>

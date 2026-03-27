@@ -819,6 +819,11 @@ export default function SuperAdminPage() {
                         <p className="text-xs text-[#519A66]/70 mt-1">
                           {recipe.base?.name ?? "베이스 없음"} · {recipe.cupSizeMl}ml · {new Date(recipe.createdAt).toLocaleString("ko-KR")}
                         </p>
+                        {recipe.notes.trim().length > 0 && (
+                          <p className="text-xs text-[#237227]/80 mt-2 whitespace-pre-line leading-relaxed">
+                            {recipe.notes}
+                          </p>
+                        )}
                       </div>
                       <div className="flex items-center gap-2 shrink-0">
                         <Link

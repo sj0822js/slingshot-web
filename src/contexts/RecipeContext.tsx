@@ -23,6 +23,7 @@ const normalizeRecipe = (recipe: SavedRecipe): SavedRecipe => ({
   ...recipe,
   layerOrder: recipe.layerOrder ?? [],
   garnishOrder: recipe.garnishOrder ?? [],
+  notes: recipe.notes ?? "",
 });
 
 const loadSavedRecipes = () => {
