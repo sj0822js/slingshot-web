@@ -1,6 +1,6 @@
 "use client";
 
-type StateKey = "admin" | "ingredients" | "pricing" | "recipes";
+type StateKey = "admin" | "ingredients" | "pricing" | "recipes" | "healthcheck";
 
 type PersistEnvelope<T> = {
   data: T;
@@ -11,6 +11,13 @@ type RemoteRow<T> = {
   key: StateKey;
   value: T;
   updated_at: string;
+};
+
+export type RemoteStateCheckResult = {
+  checkedAt: string;
+  enabled: boolean;
+  ok: boolean;
+  message: string;
 };
 
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -183,3 +190,52 @@ export const saveAppState = async <T>(key: StateKey, storageKey: string, data: T
 };
 
 export const isRemoteStateEnabled = () => isRemoteEnabled;
+
+export const verifyRemoteState = async (): Promise<RemoteStateCheckResult> => {
+  const checkedAt = new Date().toISOString();
+
+  if (!isRemoteEnabled) {
+    return {
+      checkedAt,
+      enabled: false,
+      ok: false,
+      message: "Supabase 환경변수가 아직 연결되지 않았습니다",
+    };
+  }
+
+  try {
+    const probe = createEnvelope({
+      ping: "slingshot-healthcheck",
+      checkedAt,
+    });
+
+    await pushRemoteEnvelope("healthcheck", probe);
+    const remote = await fetchRemoteEnvelope<{ ping: string; checkedAt: string }>("healthcheck");
+
+    if (!remote) {
+      return {
+        checkedAt,
+        enabled: true,
+        ok: false,
+        message: "DB에 쓰기는 되었지만 다시 읽어오지 못했습니다",
+      };
+    }
+
+    return {
+      checkedAt,
+      enabled: true,
+      ok: remote.data.checkedAt === checkedAt,
+      message:
+        remote.data.checkedAt === checkedAt
+          ? "Supabase 읽기/쓰기가 정상 동작 중입니다"
+          : "DB 응답은 왔지만 최신 점검값과 일치하지 않습니다",
+    };
+  } catch (error) {
+    return {
+      checkedAt,
+      enabled: true,
+      ok: false,
+      message: error instanceof Error ? error.message : "Supabase 연결 점검에 실패했습니다",
+    };
+  }
+};

@@ -16,6 +16,7 @@ import AdminGuard from "@/components/auth/AdminGuard";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { IngredientPrice, usePricing } from "@/contexts/PricingContext";
+import { isRemoteStateEnabled, RemoteStateCheckResult, verifyRemoteState } from "@/lib/appStateStore";
 
 export default function SuperAdminPage() {
   const { appName, setAppName, logoUrl, setLogoUrl, trendDrinks, setTrendDrinks } = useAdmin();
@@ -29,6 +30,8 @@ export default function SuperAdminPage() {
   const [trendTick, setTrendTick] = useState(false);
   const [baseSavedTick, setBaseSavedTick] = useState(false);
   const [priceSavedTick, setPriceSavedTick] = useState(false);
+  const [isCheckingRemote, setIsCheckingRemote] = useState(false);
+  const [remoteStatus, setRemoteStatus] = useState<RemoteStateCheckResult | null>(null);
 
   // Analytics
   const [todayCount, setTodayCount] = useState(0);
@@ -37,6 +40,22 @@ export default function SuperAdminPage() {
     setTodayCount(getTodayCount());
     setTopPages(getTopPages());
   }, [getTodayCount, getTopPages]);
+
+  useEffect(() => {
+    let active = true;
+
+    void verifyRemoteState().then((result) => {
+      if (!active) {
+        return;
+      }
+
+      setRemoteStatus(result);
+    });
+
+    return () => {
+      active = false;
+    };
+  }, []);
 
   // Computed state
   const bases = useMemo(
@@ -281,6 +300,13 @@ export default function SuperAdminPage() {
     setTimeout(() => setSavedTick(false), 2000);
   };
 
+  const handleRemoteCheck = async () => {
+    setIsCheckingRemote(true);
+    const result = await verifyRemoteState();
+    setRemoteStatus(result);
+    setIsCheckingRemote(false);
+  };
+
   // Route label map
   const routeLabels: Record<string, string> = {
     "/": "홈",
@@ -305,6 +331,40 @@ export default function SuperAdminPage() {
             <h1 className="text-3xl font-black text-[#237227] tracking-tight">서비스 관리자</h1>
             <p className="text-[#519A66]/70 mt-2">앱의 글로벌 설정, 로고 이미지 및 트렌드 음료를 통합 관리합니다.</p>
           </header>
+
+          <section className="bg-white border border-[#519A66]/20 rounded-3xl p-5 shadow-sm mb-8">
+            <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+              <div>
+                <p className="text-xs font-bold text-[#519A66] uppercase tracking-widest mb-2">데이터 저장 상태</p>
+                <div className="flex items-center gap-2 mb-2">
+                  <span className={`inline-flex h-2.5 w-2.5 rounded-full ${remoteStatus?.ok ? "bg-green-500" : isRemoteStateEnabled() ? "bg-amber-500" : "bg-zinc-400"}`} />
+                  <p className="text-sm font-bold text-[#237227]">
+                    {remoteStatus?.ok
+                      ? "Supabase 원격 저장 사용 중"
+                      : isRemoteStateEnabled()
+                        ? "Supabase 연결 확인 필요"
+                        : "로컬 브라우저 저장만 사용 중"}
+                  </p>
+                </div>
+                <p className="text-xs text-[#519A66]/70">
+                  {remoteStatus?.message ?? "아직 원격 저장 점검 전입니다"}
+                </p>
+                {remoteStatus && (
+                  <p className="text-[11px] text-[#519A66]/55 mt-1">
+                    마지막 점검: {new Date(remoteStatus.checkedAt).toLocaleString("ko-KR")}
+                  </p>
+                )}
+              </div>
+
+              <button
+                onClick={handleRemoteCheck}
+                disabled={isCheckingRemote}
+                className="shrink-0 rounded-xl bg-[#237227] px-4 py-3 text-sm font-bold text-white transition-colors hover:bg-[#1a5c1e] disabled:cursor-wait disabled:opacity-60"
+              >
+                {isCheckingRemote ? "Supabase 점검 중..." : "Supabase 연결 점검"}
+              </button>
+            </div>
+          </section>
 
           {/* ── Real Analytics Dashboard ── */}
           <section className="w-full grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
