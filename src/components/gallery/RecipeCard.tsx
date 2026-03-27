@@ -10,6 +10,7 @@ interface RecipeCardProps {
 
 export default function RecipeCard({ recipe }: RecipeCardProps) {
   const totalVolume = recipe.baseVolumeMl + recipe.liquids.reduce((acc, l) => acc + l.volumeMl, 0);
+  const temperatureLabel = recipe.temperature?.level && recipe.temperature.level > 0 ? "ICED" : "HOT";
   const detailSections = [
     recipe.base ? { label: "Base", items: [`${recipe.base.name} ${recipe.baseVolumeMl}ml`] } : null,
     recipe.liquids.length > 0
@@ -36,6 +37,14 @@ export default function RecipeCard({ recipe }: RecipeCardProps) {
         */}
         <div className="transform scale-[0.55] origin-center -translate-y-8 flex items-center justify-center w-[400px] h-[400px]">
           <CupPreview recipe={recipe} />
+        </div>
+
+        <div className={`absolute top-3 left-3 px-3 py-1 rounded-full text-[11px] font-black tracking-[0.2em] shadow-sm border ${
+          temperatureLabel === "ICED"
+            ? "bg-blue-50/95 text-blue-600 border-blue-100"
+            : "bg-rose-50/95 text-rose-600 border-rose-100"
+        }`}>
+          {temperatureLabel}
         </div>
 
         {/* Overlay total volume badge */}
@@ -84,15 +93,6 @@ export default function RecipeCard({ recipe }: RecipeCardProps) {
             <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-stone-100 text-stone-600 rounded-lg text-[11px] font-bold">
               <span className="w-2 h-2 rounded-full" style={{ backgroundColor: recipe.base.colorHex }} />
               {recipe.base.name}
-            </span>
-          )}
-          {recipe.temperature && (
-             <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-bold ${
-               recipe.temperature.level > 0 
-               ? "bg-red-50 text-red-500 border border-red-100" 
-               : "bg-blue-50 text-blue-500 border border-blue-100"
-             }`}>
-              {recipe.temperature.name}
             </span>
           )}
           {recipe.liquids.map((l) => (
