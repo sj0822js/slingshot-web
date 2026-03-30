@@ -2,11 +2,12 @@
 
 import Header from "@/components/layout/Header";
 import { useAdmin } from "@/contexts/AdminContext";
-import { TrendingUp, ExternalLink, ImageOff } from "lucide-react";
+import { TrendingUp, ExternalLink, ImageOff, MapPin } from "lucide-react";
 import { motion } from "framer-motion";
 import Link from "next/link";
 
 const DRINK_LABELS = ["#1 이번 주 픽", "#2 트렌드", "#3 스태프 추천", "#4 시즌 특선"];
+const SLINGSHOT_LOCATION_LINK = "https://naver.me/xUwWRPud";
 
 export default function TrendsPage() {
   const { trendDrinks } = useAdmin();
@@ -32,6 +33,40 @@ export default function TrendsPage() {
           </div>
 
           <div className="px-5 py-6 space-y-5">
+            <motion.div
+              initial={{ opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="overflow-hidden rounded-3xl border border-[#519A66]/20 shadow-sm"
+            >
+              <div className="relative overflow-hidden bg-[#031c03] px-6 py-7 text-white">
+                <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(255,208,120,0.28),transparent_38%)]" />
+                <div className="absolute inset-0 opacity-[0.08]" style={{ backgroundImage: "linear-gradient(to right, #fff 1px, transparent 1px), linear-gradient(to bottom, #fff 1px, transparent 1px)", backgroundSize: "22px 22px" }} />
+                <div className="relative z-10">
+                  <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3 py-1 text-[11px] font-black uppercase tracking-[0.22em] text-white/85">
+                    <MapPin className="h-3.5 w-3.5 text-[#FFD786]" />
+                    Visit
+                  </div>
+                  <h2 className="text-2xl font-black tracking-tight">슬링샷 위치</h2>
+                  <p className="mt-2 text-sm leading-relaxed text-white/72">
+                    매장 위치를 바로 확인하고 길찾기로 이동하세요
+                  </p>
+                </div>
+              </div>
+
+              <Link
+                href={SLINGSHOT_LOCATION_LINK}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center justify-between bg-white px-5 py-4 transition-colors hover:bg-[#f5f9f5]"
+              >
+                <div>
+                  <p className="text-sm font-black text-[#237227]">네이버 지도에서 열기</p>
+                  <p className="mt-1 text-xs text-[#519A66]/70">slingshot.kr 방문 전 위치를 확인해보세요</p>
+                </div>
+                <ExternalLink className="h-4 w-4 text-[#519A66]" />
+              </Link>
+            </motion.div>
+
             {activeTrends.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-20 text-center gap-4">
                 <div className="w-20 h-20 rounded-3xl bg-[#519A66]/10 flex items-center justify-center">
