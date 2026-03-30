@@ -4,7 +4,7 @@ import { useCallback, useEffect, useSyncExternalStore } from "react";
 import Header from "@/components/layout/Header";
 import HeroLanding from "@/components/hero/HeroLanding";
 import { useLanguage } from "@/contexts/LanguageContext";
-import { Settings2, Coffee, Plus, TrendingUp, BookOpen } from "lucide-react";
+import { Settings2, Coffee, Plus, MapPin, BookOpen } from "lucide-react";
 import { motion } from "framer-motion";
 import Link from "next/link";
 import { useRecipes } from "@/contexts/RecipeContext";
@@ -12,6 +12,7 @@ import { useRecipes } from "@/contexts/RecipeContext";
 const HERO_CACHE_KEY = "slingshot-hero-dismissed-at";
 const HERO_CACHE_MS = 60 * 60 * 1000;
 const HERO_CACHE_EVENT = "slingshot-hero-cache-updated";
+const SLINGSHOT_LOCATION_LINK = "https://naver.me/xUwWRPud";
 
 const subscribeHeroCache = (onStoreChange: () => void) => {
   window.addEventListener("storage", onStoreChange);
@@ -94,15 +95,16 @@ export default function Home() {
       featured: true,
     },
     {
-      href: "/trends",
-      icon: TrendingUp,
-      title: "트렌드 음료 알아보기",
-      desc: "요즘 인기있는 커스텀 픽",
+      href: SLINGSHOT_LOCATION_LINK,
+      icon: MapPin,
+      title: "슬링샷 찾아가기",
+      desc: "네이버 지도에서 매장 위치 확인",
       bg: "bg-[#FFAA00]/20",
       textColor: "text-[#1a2e1b]",
       iconBg: "bg-[#FFAA00]/40",
       iconColor: "text-[#FFAA00]",
       featured: true,
+      external: true,
     },
   ];
 
@@ -144,6 +146,8 @@ export default function Home() {
                 >
                   <Link
                     href={item.href}
+                    target={item.external ? "_blank" : undefined}
+                    rel={item.external ? "noopener noreferrer" : undefined}
                     className={`group relative p-6 rounded-3xl flex flex-col justify-between items-start transition-all hover:scale-[1.02] active:scale-[0.98] cursor-pointer shadow-sm hover:shadow-md w-full block ${item.bg} ${item.featured ? 'aspect-[2.5/1]' : 'aspect-square'}`}
                   >
                     <div className="absolute inset-0 bg-white/0 group-hover:bg-white/10 transition-colors rounded-3xl pointer-events-none" />
