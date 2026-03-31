@@ -1,6 +1,6 @@
 "use client";
 
-type StateKey = "admin" | "ingredients" | "pricing" | "recipes" | "healthcheck";
+type StateKey = "admin" | "ingredients" | "pricing" | "recipes" | "healthcheck" | "analytics";
 
 type PersistEnvelope<T> = {
   data: T;

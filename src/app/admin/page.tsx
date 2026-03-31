@@ -8,8 +8,9 @@ import { useRecipes } from "@/contexts/RecipeContext";
 import { DrinkBase } from "@/types/ingredient";
 import {
   Upload, Sparkles, LayoutPanelTop, MonitorSmartphone, Image as ImageIcon,
-  Users, MousePointerClick, Coffee, Settings2, Link as LinkIcon, PlusCircle,
+  Users, Coffee, Settings2, Link as LinkIcon, PlusCircle,
   Check, Droplet, Timer, ThermometerSun, Plus, X, BookOpen, Receipt, Trash2,
+  TrendingUp, TrendingDown, Minus,
 } from "lucide-react";
 import { motion } from "framer-motion";
 import AdminGuard from "@/components/auth/AdminGuard";
@@ -21,7 +22,7 @@ import { RemoteStateCheckResult, verifyRemoteState } from "@/lib/appStateStore";
 export default function SuperAdminPage() {
   const { appName, setAppName, logoUrl, setLogoUrl, trendDrinks, setTrendDrinks } = useAdmin();
   const { ingredients, updateIngredient, addIngredient, removeIngredient } = useIngredients();
-  const { getTodayCount, getTopPages } = useAnalytics();
+  const { getDailyVisits, getTodayCount, getTopPages } = useAnalytics();
   const { savedRecipes, deleteRecipe } = useRecipes();
   const { settings: pricing, updateSettings: updatePricing, setIngredientPrice, getIngredientPrice } = usePricing();
   
@@ -35,11 +36,13 @@ export default function SuperAdminPage() {
 
   // Analytics
   const [todayCount, setTodayCount] = useState(0);
+  const [dailyVisits, setDailyVisits] = useState<{ date: string; count: number }[]>([]);
   const [topPages, setTopPages] = useState<{ path: string; count: number }[]>([]);
   useEffect(() => {
+    setDailyVisits(getDailyVisits());
     setTodayCount(getTodayCount());
     setTopPages(getTopPages());
-  }, [getTodayCount, getTopPages]);
+  }, [getDailyVisits, getTodayCount, getTopPages]);
 
   useEffect(() => {
     let active = true;
@@ -318,6 +321,27 @@ export default function SuperAdminPage() {
     "/admin": "어드민",
   };
 
+  const visitorTrend = useMemo(() => {
+    const normalized = [...dailyVisits].sort((a, b) => a.date.localeCompare(b.date));
+    const recent = normalized.slice(-7);
+    const today = recent[recent.length - 1];
+    const yesterday = recent[recent.length - 2];
+    const diff = (today?.count ?? 0) - (yesterday?.count ?? 0);
+    const direction = diff > 0 ? "up" : diff < 0 ? "down" : "flat";
+    const maxCount = Math.max(...recent.map((visit) => visit.count), 1);
+    const weeklyAverage = recent.length
+      ? Math.round(recent.reduce((sum, visit) => sum + visit.count, 0) / recent.length)
+      : 0;
+
+    return {
+      recent,
+      diff,
+      direction,
+      maxCount,
+      weeklyAverage,
+    };
+  }, [dailyVisits]);
+
   return (
     <AdminGuard>
       <div className="w-full min-h-screen bg-[#f5f9f5] flex flex-col">
@@ -375,19 +399,28 @@ export default function SuperAdminPage() {
               <div>
                 <p className="text-xs font-bold text-[#519A66] uppercase tracking-widest">오늘 방문수</p>
                 <p className="text-2xl font-black text-[#237227]">{todayCount}<span className="text-sm text-[#519A66]/60 font-medium ml-1">회</span></p>
-                <p className="text-[10px] text-[#519A66]/50 mt-0.5">페이지 뷰 기준, localStorage</p>
+                <p className="text-[10px] text-[#519A66]/50 mt-0.5">페이지 뷰 기준, Supabase 동기화</p>
               </div>
             </motion.div>
             <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="bg-white border border-[#519A66]/20 rounded-3xl p-5 shadow-sm flex items-center gap-4">
               <div className="w-12 h-12 rounded-full bg-[#FFAA00]/10 text-[#FFAA00] flex items-center justify-center shrink-0">
-                <MousePointerClick className="w-5 h-5" />
+                {visitorTrend.direction === "up" ? (
+                  <TrendingUp className="w-5 h-5" />
+                ) : visitorTrend.direction === "down" ? (
+                  <TrendingDown className="w-5 h-5" />
+                ) : (
+                  <Minus className="w-5 h-5" />
+                )}
               </div>
               <div className="overflow-hidden">
-                <p className="text-xs font-bold text-[#519A66] uppercase tracking-widest">최다 접근 페이지</p>
-                {topPages[0] ? (
+                <p className="text-xs font-bold text-[#519A66] uppercase tracking-widest">방문 추세</p>
+                {visitorTrend.recent.length > 0 ? (
                   <>
-                    <p className="text-lg font-black text-[#237227] truncate">{routeLabels[topPages[0].path] || topPages[0].path}</p>
-                    <p className="text-[10px] text-[#519A66]/50 mt-0.5">{topPages[0].count}회 방문</p>
+                    <p className="text-lg font-black text-[#237227] truncate">
+                      {visitorTrend.diff > 0 ? "+" : ""}
+                      {visitorTrend.diff}회
+                    </p>
+                    <p className="text-[10px] text-[#519A66]/50 mt-0.5">전일 대비 변화</p>
                   </>
                 ) : (
                   <p className="text-sm text-[#519A66]/40 font-medium mt-1">아직 데이터 없음</p>
@@ -406,8 +439,44 @@ export default function SuperAdminPage() {
             </motion.div>
           </section>
 
+          {visitorTrend.recent.length > 0 && (
+            <section className="bg-white border border-[#519A66]/20 rounded-3xl p-5 shadow-sm mb-8">
+              <div className="flex flex-col gap-1 mb-5 md:flex-row md:items-end md:justify-between">
+                <div>
+                  <p className="text-xs font-bold text-[#519A66] uppercase tracking-widest">최근 7일 방문 추세</p>
+                  <p className="text-sm text-[#237227]/70 mt-1">오늘 방문수와 함께 최근 흐름을 바로 파악할 수 있어요.</p>
+                </div>
+                <p className="text-xs text-[#519A66]/60">
+                  최근 7일 평균 {visitorTrend.weeklyAverage}회
+                </p>
+              </div>
+
+              <div className="grid grid-cols-7 gap-2 items-end">
+                {visitorTrend.recent.map((visit) => (
+                  <div key={visit.date} className="flex flex-col items-center gap-2">
+                    <div className="flex h-28 w-full items-end">
+                      <div
+                        className="w-full rounded-t-2xl bg-gradient-to-t from-[#237227] to-[#7CC18A] transition-all"
+                        style={{ height: `${Math.max((visit.count / visitorTrend.maxCount) * 100, 12)}%` }}
+                      />
+                    </div>
+                    <div className="text-center">
+                      <p className="text-sm font-black text-[#237227]">{visit.count}</p>
+                      <p className="text-[10px] text-[#519A66]/60">
+                        {new Date(`${visit.date}T00:00:00`).toLocaleDateString("ko-KR", {
+                          month: "numeric",
+                          day: "numeric",
+                        })}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </section>
+          )}
+
           {/* Top pages breakdown */}
-          {topPages.length > 1 && (
+          {topPages.length > 0 && (
             <section className="bg-white border border-[#519A66]/20 rounded-3xl p-5 shadow-sm mb-8">
               <p className="text-xs font-bold text-[#519A66] uppercase tracking-widest mb-4">페이지별 방문 통계</p>
               <div className="space-y-3">
